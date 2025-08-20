@@ -72,3 +72,29 @@ export const clearSelectedCompany = async () => {
     return false;
   }
 };
+
+// Comprehensive logout function
+export const logout = async (): Promise<boolean> => {
+  try {
+    await Promise.all([
+      AsyncStorage.removeItem(TOKEN_KEY),
+      AsyncStorage.removeItem('proxyAuthToken'),
+      AsyncStorage.removeItem(SELECTED_COMPANY_KEY),
+      AsyncStorage.removeItem('selectedOrganization'),
+    ]);
+    return true;
+  } catch (error) {
+    // Silent fail for iOS simulator issues
+    return false;
+  }
+};
+
+// Check if user is logged in
+export const isLoggedIn = async (): Promise<boolean> => {
+  try {
+    const token = await getToken();
+    return !!token;
+  } catch (error) {
+    return false;
+  }
+};
