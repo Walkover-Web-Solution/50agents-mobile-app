@@ -110,14 +110,8 @@ const DashboardScreen = () => {
         companyId: companyId
       });
       
-      // If 401 error, redirect to login
-      if (error?.response?.status === 401) {
-        console.log('Token expired, redirecting to login');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
-      }
+      // Log error for debugging but don't redirect
+      // Let user stay on dashboard even if API fails
     } finally {
       setLoading(false);
     }
@@ -167,13 +161,13 @@ const DashboardScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.organizationName}>{companyName}</Text>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.navigate('OrganizationSelection')}
           >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
+          <Text style={styles.organizationName}>{companyName}</Text>
         </View>
         <Text style={styles.subtitle}>
           {isOwnOrganization 
@@ -249,7 +243,6 @@ const styles = StyleSheet.create({
   },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 5,
   },
@@ -258,12 +251,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
+    marginLeft: 15,
   },
   backButton: {
     padding: 8,
     borderRadius: 20,
     backgroundColor: '#2a2a2a',
-    marginLeft: 10,
   },
   backArrow: {
     fontSize: 18,

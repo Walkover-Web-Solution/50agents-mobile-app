@@ -186,64 +186,68 @@ const ChatScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.agentInfo}>
-          <View style={styles.agentAvatar}>
-            <Text style={styles.agentInitial}>
-              {agentName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <Text style={styles.agentName}>{agentName}</Text>
-        </View>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {/* Messages */}
-      <FlatList
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        style={styles.messagesList}
-        contentContainerStyle={styles.messagesContainer}
-      />
-
-      {/* Input */}
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.inputContainer}
+        style={styles.flex}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 20}
       >
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.textInput}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Type your message..."
-            placeholderTextColor="#888"
-            multiline
-            maxLength={1000}
-          />
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity 
-            style={[
-              styles.sendButton, 
-              inputText.trim() && !sendingMessage ? styles.sendButtonActive : null,
-              sendingMessage ? styles.sendButtonLoading : null
-            ]}
-            onPress={sendMessage}
-            disabled={!inputText.trim() || sendingMessage}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            {sendingMessage ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.sendButtonText}>Send</Text>
-            )}
+            <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
+          <View style={styles.agentInfo}>
+            <View style={styles.agentAvatar}>
+              <Text style={styles.agentInitial}>
+                {agentName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.agentName}>{agentName}</Text>
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        {/* Messages */}
+        <FlatList
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContainer}
+          keyboardShouldPersistTaps="handled"
+        />
+
+        {/* Input */}
+        <View style={styles.inputContainer}>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Type your message..."
+              placeholderTextColor="#888"
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity 
+              style={[
+                styles.sendButton, 
+                inputText.trim() && !sendingMessage ? styles.sendButtonActive : null,
+                sendingMessage ? styles.sendButtonLoading : null
+              ]}
+              onPress={sendMessage}
+              disabled={!inputText.trim() || sendingMessage}
+            >
+              {sendingMessage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.sendButtonText}>Send</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -254,6 +258,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a1a',
+  },
+  flex: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -352,11 +359,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#2a2a2a',
     backgroundColor: '#1a1a1a',
+    paddingBottom: Platform.OS === 'ios' ? 15 : 10,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
   },
   textInput: {
     flex: 1,

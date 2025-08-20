@@ -8,7 +8,7 @@ export const saveToken = async (token: string): Promise<boolean> => {
     await AsyncStorage.setItem(TOKEN_KEY, token);
     return true;
   } catch (error) {
-    console.error('Error saving token:', error);
+    // Silent fail for iOS simulator issues
     return false;
   }
 };
@@ -18,47 +18,47 @@ export const getToken = async (): Promise<string | null> => {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
     return token;
   } catch (error) {
-    console.error('Error getting token:', error);
+    // Silent fail for iOS simulator issues
     return null;
   }
 };
 
-export const clearToken = async () => {
+export const clearToken = async (): Promise<boolean> => {
   try {
     await AsyncStorage.removeItem(TOKEN_KEY);
     return true;
   } catch (error) {
-    console.error('Error clearing token:', error);
+    // Silent fail for iOS simulator issues
     return false;
   }
 };
 
-export const saveOrgId = async (orgId: string) => {
+export const saveOrgId = async (orgId: string): Promise<boolean> => {
   try {
     await AsyncStorage.setItem(SELECTED_COMPANY_KEY, orgId);
     return true;
   } catch (error) {
-    console.error('Error saving organization ID:', error);
+    // Silent fail for iOS simulator issues
     return false;
   }
 };
 
-export const saveSelectedCompany = async (company: any) => {
+export const saveSelectedCompany = async (company: any): Promise<boolean> => {
   try {
     await AsyncStorage.setItem(SELECTED_COMPANY_KEY, JSON.stringify(company));
     return true;
   } catch (error) {
-    console.error('Error saving company:', error);
+    // Silent fail for iOS simulator issues
     return false;
   }
 };
 
-export const getSelectedCompany = async () => {
+export const getSelectedCompany = async (): Promise<any | null> => {
   try {
     const company = await AsyncStorage.getItem(SELECTED_COMPANY_KEY);
     return company ? JSON.parse(company) : null;
   } catch (error) {
-    console.error('Error getting company:', error);
+    // Silent fail for iOS simulator issues
     return null;
   }
 };
@@ -68,7 +68,7 @@ export const clearSelectedCompany = async () => {
     await AsyncStorage.removeItem(SELECTED_COMPANY_KEY);
     return true;
   } catch (error) {
-    console.error('Error clearing company:', error);
+    // Silent fail for iOS simulator issues
     return false;
   }
 };
