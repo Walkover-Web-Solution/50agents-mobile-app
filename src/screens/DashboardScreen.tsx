@@ -7,27 +7,18 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { getToken } from '../utils/auth';
-import api from '../api/axios';
+import { DashboardService, Agent } from '../services/dashboardService';
+// Alternative import if default import fails:
+// import DashboardService from '../services/dashboardService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 type DashboardRouteProp = RouteProp<RootStackParamList, 'Dashboard'>;
-
-interface Agent {
-  _id: string;
-  name: string;
-  logo?: string;
-  unread?: number;
-  createdBy?: string;
-  editors?: string[];
-  bridgeId?: string;
-}
 
 const DashboardScreen = () => {
   const navigation = useNavigation<NavProp>();
@@ -42,8 +33,15 @@ const DashboardScreen = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Check if this is user's own organization
-  const isOwnOrganization = companyName === 'Kartik Shrivastav';
+  // Check if this is user's own organization (with null safety)
+  const isOwnOrganization = DashboardService.isUserOwnOrganization(companyName || '');
+
+  /**
+   * Get filtered agents based on search query
+   */
+  const getFilteredAgents = (): Agent[] => {
+    return DashboardService.filterAgentsBySearch(agents, searchQuery);
+  };
 
   const fetchDashboardAgents = async () => {
     try {
@@ -61,57 +59,50 @@ const DashboardScreen = () => {
         return;
       }
       
-      // API credentials (will be dynamic later)
-      const apiCompanyId = '870623';
-      const userId = '36jowpr17';
-      
-
-      
-      // Use the pre-configured axios instance which already has the token
-      const response = await api.get(`/proxy/${apiCompanyId}/${userId}/agent/`);
-      
-      if (response.status === 200) {
-        const result = response.data;
-
-        
-        if (result.success && result.data?.agents) {
-          const allAgents = result.data.agents;
-          
-          // First agent is always "My Assistant" (user's own agent)
-          const firstAgent = allAgents[0];
-          if (firstAgent) {
-            setMyAssistant({
-              ...firstAgent,
-              name: 'My Assistant' // Override name for display
-            });
-          }
-          
-          // Rest are custom agents
-          const customAgents = allAgents.slice(1);
-          
-          if (isOwnOrganization) {
-            // Own organization: Show all custom agents
-            setAgents(customAgents);
-          } else {
-            // Other organizations: Show no custom agents, only My Assistant
-            setAgents([]);
-          }
-        }
-      } else {
-        console.log('❌ Dashboard API Failed:', response.status);
-        console.log('Response data:', response.data);
-        // No fallback data - show empty state
+      // API credentials - get from stored organization data
+      if (!organizationId) {
+        console.error('❌ [UI] No organizationId provided from navigation');
+        throw new Error('Organization ID is required');
       }
-    } catch (error: any) {
-      console.error('Dashboard API Error:', {
-        message: error?.message,
-        status: error?.response?.status,
-        data: error?.response?.data,
-        companyId: companyId
-      });
       
-      // Log error for debugging but don't redirect
-      // Let user stay on dashboard even if API fails
+      // Get stored user profile and orgAgentMap from switchOrganization API
+      const userProfile = await AsyncStorage.getItem('userProfile');
+      const orgAgentMapStr = await AsyncStorage.getItem('orgAgentMap');
+      const userData = userProfile ? JSON.parse(userProfile) : null;
+      const orgAgentMap = orgAgentMapStr ? JSON.parse(orgAgentMapStr) : null;
+      
+      // Use stable API credentials for URL - these are the main company credentials
+      // organizationId should be passed as orgId parameter in request body, not in URL
+      const apiCompanyId = '870623'; // Main company ID for API URL (stable)
+      const userId = '36jowpr17'; // Main user ID for API URL (stable)
+      const targetOrgId = organizationId; // This goes in request body as orgId parameter
+      
+      console.log('🔄 [UI] Loading dashboard data for Organization:', organizationId);
+      console.log('🔄 [UI] Using API credentials - Company:', apiCompanyId, 'User:', userId);
+      console.log('🎯 [UI] Target organization ID for switch:', targetOrgId);
+      if (orgAgentMap) {
+        console.log('🔄 [UI] Available orgAgentMap:', orgAgentMap);
+      }
+      
+      // Call service to switch org and fetch agents (combines switch-org + agents API calls)
+      const allAgents = await DashboardService.switchOrgAndGetAgents(apiCompanyId, userId, targetOrgId);
+      
+      // Process agents using service helper
+      const { myAssistant: processedMyAssistant, customAgents } = DashboardService.processAgents(allAgents);
+      
+      // Filter agents based on organization ownership (now returns true for all orgs)
+      const filteredAgents = DashboardService.filterAgentsByOrganization(customAgents, isOwnOrganization);
+      
+      // Update state
+      setMyAssistant(processedMyAssistant);
+      setAgents(filteredAgents);
+      
+      console.log('✅ [UI] Dashboard data loaded successfully');
+      
+    } catch (error: any) {
+      console.error('🚨 [UI] Dashboard error:', error.message);
+      
+      
     } finally {
       setLoading(false);
     }
@@ -126,22 +117,44 @@ const DashboardScreen = () => {
     navigation.navigate('Chat', {
       agentId: agent._id,
       agentName: agent.name,
-      agentLogo: agent.logo,
+      agentColor: getAgentColor(agent.name), // Pass the same color
     });
   };
 
-  const filteredAgents = agents.filter(agent =>
-    agent.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAgents = getFilteredAgents();
+
+  /**
+   * Generate consistent color for agent based on name
+   */
+  const getAgentColor = (name: string) => {
+    const colors = [
+      '#6366f1', // Purple
+      '#3b82f6', // Blue  
+      '#10b981', // Green
+      '#f59e0b', // Orange
+      '#ef4444', // Red
+      '#8b5cf6', // Violet
+      '#06b6d4', // Cyan
+      '#84cc16', // Lime
+    ];
+    
+    // Generate consistent hash from name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   const renderAgent = ({ item }: { item: Agent }) => (
     <TouchableOpacity
       style={styles.agentItem}
       onPress={() => handleAgentPress(item)}
     >
-      <View style={styles.agentAvatar}>
+      <View style={[styles.agentAvatar, { backgroundColor: getAgentColor(item.name) }]}>
         <Text style={styles.agentInitial}>
-          {item.name.charAt(0).toUpperCase()}
+          {item.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
         </Text>
       </View>
       <Text style={styles.agentName}>{item.name}</Text>
@@ -151,8 +164,11 @@ const DashboardScreen = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1a73e8" />
-        <Text style={styles.loadingText}>Loading dashboard...</Text>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#1a73e8" />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+          <Text style={styles.loadingSubText}>Switching organization...</Text>
+        </View>
       </View>
     );
   }
@@ -194,9 +210,9 @@ const DashboardScreen = () => {
           style={styles.myAssistantItem}
           onPress={() => handleAgentPress(myAssistant)}
         >
-          <View style={[styles.agentAvatar, styles.myAssistantAvatar]}>
+          <View style={[styles.agentAvatar, styles.myAssistantAvatar, { backgroundColor: getAgentColor(myAssistant.name) }]}>
             <Text style={styles.agentInitial}>
-              {myAssistant.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2)}
+              {myAssistant.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
             </Text>
           </View>
           <Text style={styles.agentName}>{myAssistant.name}</Text>
@@ -227,15 +243,29 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   loadingContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingText: {
     color: '#fff',
     marginTop: 10,
     fontSize: 16,
+  },
+  loadingSubText: {
+    color: '#fff',
+    marginTop: 5,
+    fontSize: 14,
   },
   header: {
     paddingHorizontal: 20,
@@ -290,7 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   myAssistantAvatar: {
-    backgroundColor: '#4CAF50', // Green for My Assistant
+    // backgroundColor: '#4CAF50', // Green for My Assistant
   },
   agentItem: {
     flexDirection: 'row',
@@ -306,7 +336,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6366f1', // Purple like in 50agents
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,

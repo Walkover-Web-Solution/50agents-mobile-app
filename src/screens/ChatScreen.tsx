@@ -43,13 +43,41 @@ interface AgentDetails {
 const ChatScreen = () => {
   const navigation = useNavigation<ChatNavProp>();
   const route = useRoute<ChatRouteProp>();
-  const { agentId, agentName, agentLogo } = route.params;
+  const { agentId, agentName, agentColor } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [agentDetails, setAgentDetails] = useState<AgentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  /**
+   * Generate consistent color for agent based on name
+   * Same function as in DashboardScreen
+   */
+  const getAgentColor = (name: string) => {
+    // Use passed color if available, otherwise generate
+    if (agentColor) return agentColor;
+    
+    const colors = [
+      '#6366f1', // Purple
+      '#3b82f6', // Blue  
+      '#10b981', // Green
+      '#f59e0b', // Orange
+      '#ef4444', // Red
+      '#8b5cf6', // Violet
+      '#06b6d4', // Cyan
+      '#84cc16', // Lime
+    ];
+    
+    // Generate consistent hash from name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   // Fetch agent details on component mount
   useEffect(() => {
@@ -200,9 +228,9 @@ const ChatScreen = () => {
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <View style={styles.agentInfo}>
-            <View style={styles.agentAvatar}>
+            <View style={[styles.agentAvatar, { backgroundColor: getAgentColor(agentName) }]}>
               <Text style={styles.agentInitial}>
-                {agentName.charAt(0).toUpperCase()}
+                {agentName.substring(0, 2).toUpperCase()}
               </Text>
             </View>
             <Text style={styles.agentName}>{agentName}</Text>
@@ -301,7 +329,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1a73e8',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,

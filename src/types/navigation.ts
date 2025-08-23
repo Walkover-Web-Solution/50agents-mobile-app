@@ -19,6 +19,7 @@ export type RootStackParamList = {
     agentId: string;
     agentName: string;
     agentLogo?: string;
+    agentColor?: string;
   };
   
   // Add other screens here as needed
