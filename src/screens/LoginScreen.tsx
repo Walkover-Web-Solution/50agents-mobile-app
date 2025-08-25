@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
   Text,
   TouchableOpacity,
   Alert,
@@ -15,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { saveToken, saveUserEmail } from '../utils/auth';
 import { RootStackParamList } from '../types/navigation';
 import { CONFIG } from '../config';
+import { loginStyles as styles } from '../styles/LoginScreen.styles';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -45,61 +45,69 @@ const LoginScreen = () => {
       }
       
       // 🚀 Console the initial JWT response structure
-      
+      console.log('🔑 Full OTP Response:', JSON.stringify(parsedData, null, 2));
       console.log('🔑 JWT Token (message):', parsedData?.message);
       
-      
-      
-      
-      
-      // Check multiple possible response formats
+      // Check multiple possible response formats for MSG91 OTP
       let isSuccess = false;
       let token = null;
 
-      // Format 1: data.type === 'success' && data.message
+      // Format 1: data.type === 'success' && data.message (MSG91 common format)
       if (parsedData?.type?.toLowerCase() === 'success' && parsedData?.message) {
         isSuccess = true;
         token = parsedData.message; // Extract only the JWT token
+        console.log('✅ Format 1: type=success, message found');
       }
-      // Format 2: data.status === 'success' && data.token
+      // Format 2: data.status === 'success' && data.message
+      else if (parsedData?.status?.toLowerCase() === 'success' && parsedData?.message) {
+        isSuccess = true;
+        token = parsedData.message;
+        console.log('✅ Format 2: status=success, message found');
+      }
+      // Format 3: data.status === 'success' && data.token
       else if (parsedData?.status?.toLowerCase() === 'success' && parsedData?.token) {
         isSuccess = true;
         token = parsedData.token;
+        console.log('✅ Format 3: status=success, token found');
       }
-      // Format 3: data.success === true && data.data?.token
+      // Format 4: data.success === true && data.data?.token
       else if (parsedData?.success === true && parsedData?.data?.token) {
         isSuccess = true;
         token = parsedData.data.token;
+        console.log('✅ Format 4: success=true, data.token found');
       }
-      // Format 4: Direct token in parsedData
-      else if (typeof parsedData === 'string') {
+      // Format 5: Direct token in parsedData (string response)
+      else if (typeof parsedData === 'string' && parsedData.length > 50) {
         isSuccess = true;
         token = parsedData;
+        console.log('✅ Format 5: Direct token string');
+      }
+      // Format 6: data.message exists (fallback)
+      else if (parsedData?.message && typeof parsedData.message === 'string') {
+        isSuccess = true;
+        token = parsedData.message;
+        console.log('✅ Format 6: Fallback message found');
       }
 
-
+      console.log('🎯 OTP Validation Result:', { isSuccess, tokenExists: !!token });
 
       if (isSuccess && token) {
-
         
-        console.log('🎯 JWT Token Found:', token);
-        console.log('🔍 Token Length:', token.length);
-        console.log('🔍 Token Type:', typeof token);
-        console.log('🔍 Complete OTP Response:', JSON.stringify(parsedData, null, 2));
+        console.log('🔑 JWT Token received successfully');
         
-        // Decode JWT token to extract email
+        // Extract email using multiple fallbacks
         let extractedEmail = '';
         
-        // Priority 1: Try to extract email from OTP response first
-        if (parsedData?.email) {
+        // Priority 1: Try to get email from OTP response first
+        if (parsedData?.data?.email) {
+          extractedEmail = parsedData.data.email;
+          console.log('📧 Email found in OTP response data:', extractedEmail);
+        } else if (parsedData?.email) {
           extractedEmail = parsedData.email;
           console.log('📧 Email found in OTP response:', extractedEmail);
         } else if (parsedData?.user_email) {
           extractedEmail = parsedData.user_email;
           console.log('📧 User email found in OTP response:', extractedEmail);
-        } else if (parsedData?.data?.email) {
-          extractedEmail = parsedData.data.email;
-          console.log('📧 Email found in OTP response data:', extractedEmail);
         }
         
         // Priority 2: If no email in OTP response, try JWT token
@@ -210,11 +218,12 @@ const LoginScreen = () => {
           routes: [{ name: 'OrganizationSelection' }],
         });
       } else {
-        throw new Error(data?.message || data?.error || 'Invalid OTP response');
+        console.log('❌ OTP Validation Failed - Response does not match expected formats');
+        throw new Error('Invalid OTP response format. Please try again.');
       }
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to complete OTP verification';
-      console.error('OTP Error:', errorMessage, error);
+      console.error('❌ OTP Error:', errorMessage, error);
       
       // Reset states but keep modal open for retry
       setOtpVerified(false);
@@ -281,66 +290,5 @@ const LoginScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
-  },
-  input: {
-    width: '100%',
-    maxWidth: 300,
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    padding: 10,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    width: '100%',
-    maxWidth: 300,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-  },
-  otpWrapper: {
-    flex: 1,
-    width: '100%',
-    margin: 0,
-    padding: 0,
-    overflow: 'hidden',
-  },
-});
 
 export default LoginScreen;
