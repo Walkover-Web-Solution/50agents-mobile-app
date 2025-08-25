@@ -9,6 +9,7 @@ export interface Agent {
   createdBy?: string;
   editors?: string[];
   bridgeId?: string;
+  ownerName?: string;
 }
 
 // Switch-org API Response interface (based on actual response)
@@ -110,19 +111,75 @@ export class DashboardService {
 
   /**
    * Process agents into "My Assistant" and custom agents
+   * Fixed logic to prevent name swapping issues
    */
   static processAgents(allAgents: Agent[]): { myAssistant: Agent | null; customAgents: Agent[] } {
     if (!allAgents || allAgents.length === 0) {
       return { myAssistant: null, customAgents: [] };
     }
     
-    const firstAgent = allAgents[0];
-    const myAssistant: Agent | null = firstAgent ? {
-      ...firstAgent,
-      name: 'My Assistant' // Override name for display
-    } : null;
+    console.log('🔍 Processing agents, total count:', allAgents.length);
+    console.log('📋 Agent names:', allAgents.map(agent => agent.name));
     
-    const customAgents = allAgents.slice(1);
+    // Look for existing "My Assistant" type agent
+    // Look for actual default AI assistant by exact name match
+    let myAssistant: Agent | null = null;
+    const customAgents: Agent[] = [];
+    
+    // Check if there's already a "My Assistant" type agent
+    const existingAssistant = allAgents.find(agent => 
+      agent.name.toLowerCase() === 'ai assistant' ||
+      agent.name.toLowerCase() === 'my assistant' ||
+      agent.name.toLowerCase() === 'assistant'
+    );
+    
+    if (existingAssistant) {
+      // Use the actual AI Assistant
+      myAssistant = {
+        ...existingAssistant,
+        name: 'My Assistant' // Always display as "My Assistant" in dashboard
+      };
+      console.log('✅ Found AI Assistant:', existingAssistant.name, 'ID:', existingAssistant._id);
+      
+      // All other agents are custom agents with their original names
+      allAgents.forEach(agent => {
+        if (agent._id !== existingAssistant._id) {
+          customAgents.push(agent); // Keep original name (youtube, facebook, etc)
+        }
+      });
+    } else {
+      // If no AI Assistant exists, don't create fake My Assistant
+      // This should not happen in normal cases as AI Assistant is default
+      console.log('❌ No AI Assistant found in this organization');
+      myAssistant = null;
+      // All agents remain as custom agents
+      customAgents.push(...allAgents);
+    }
+    
+    // Sort custom agents to show owner's default agent first, then alphabetical
+    customAgents.sort((a, b) => {
+      // Owner's agent has ownerName or createdBy property (from API)
+      const isAOwner = !!(a.ownerName || a.createdBy);
+      const isBOwner = !!(b.ownerName || b.createdBy);
+      
+      // Owner's default agent comes first
+      if (isAOwner && !isBOwner) return -1;
+      if (!isAOwner && isBOwner) return 1;
+      
+      // Rest in alphabetical order
+      return a.name.localeCompare(b.name);
+    });
+    
+    // Add My Assistant at the very top of custom agents list if it exists
+    if (myAssistant) {
+      console.log('✅ Moving My Assistant to top of custom agents list:', myAssistant.name);
+      customAgents.unshift(myAssistant); // Add at beginning
+      console.log('👤 My Assistant: moved to top of custom agents');
+      myAssistant = null; // Remove separate My Assistant (now it's in customAgents)
+    }
+    
+    console.log('📊 Final processing result:');
+    console.log('🔧 Custom agents (sorted):', customAgents.map(agent => agent.name));
     
     return { myAssistant, customAgents };
   }
@@ -164,3 +221,5 @@ export class DashboardService {
 
 // Export as default for cleaner imports
 export default DashboardService;
+
+// @ts-ignore

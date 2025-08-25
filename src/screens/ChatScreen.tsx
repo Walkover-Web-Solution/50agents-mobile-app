@@ -99,8 +99,32 @@ const ChatScreen = () => {
       console.log('🔄 Switching to thread:', thread.tid);
       
       setCurrentThreadId(thread.tid);
-      setMessages(thread.messages);
       setShowThreadsList(false);
+      
+      // If thread already has messages, use them, otherwise load from server
+      if (thread.messages && thread.messages.length > 0) {
+        console.log('✅ Using cached messages:', thread.messages.length);
+        setMessages(thread.messages);
+      } else {
+        console.log('📥 Loading messages from server for thread:', thread.tid);
+        setMessages([]); // Clear current messages while loading
+        
+        // Load thread messages from server API
+        if (agentDetails) {
+          // Use serverId (MongoDB _id) for messages API, not tid (middleware_id)
+          const messageThreadId = thread.serverId || thread.tid;
+          console.log('🔍 Using thread ID for messages API:', messageThreadId);
+          console.log('📝 Thread details:', { tid: thread.tid, serverId: thread.serverId });
+          
+          const loadedMessages = await ChatAPI.loadThreadHistory(messageThreadId, agentId, agentDetails);
+          console.log('✅ Loaded messages from server:', loadedMessages.length);
+          setMessages(loadedMessages);
+          
+          // Update the thread in our local list with loaded messages
+          const updatedThread = { ...thread, messages: loadedMessages };
+          await ChatAPI.saveThreadData(thread.tid, loadedMessages, agentId);
+        }
+      }
       
       // Auto-scroll to bottom
       setTimeout(() => {
@@ -345,7 +369,7 @@ const ChatScreen = () => {
             style={styles.threadsButton}
             onPress={() => setShowThreadsList(true)}
           >
-            <Text style={styles.threadsIcon}>🗂️</Text>
+            <Text style={styles.threadsIcon}>≡</Text>
           </TouchableOpacity>
         </View>
 
@@ -441,9 +465,11 @@ const ChatScreen = () => {
               >
                 <View style={styles.threadInfo}>
                   <Text style={styles.threadTitle}>
-                    {item.messages.length > 0 
-                      ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
-                      : 'New conversation'
+                    {item.threadName 
+                      ? item.threadName
+                      : item.messages.length > 0 
+                        ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
+                        : 'New conversation'
                     }
                   </Text>
                   <Text style={styles.threadDate}>

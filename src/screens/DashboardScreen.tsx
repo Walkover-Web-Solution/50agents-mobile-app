@@ -205,21 +205,6 @@ const DashboardScreen = () => {
       </View>
 
 
-      {myAssistant && (
-        <TouchableOpacity 
-          style={styles.myAssistantItem}
-          onPress={() => handleAgentPress(myAssistant)}
-        >
-          <View style={[styles.agentAvatar, styles.myAssistantAvatar, { backgroundColor: getAgentColor(myAssistant.name) }]}>
-            <Text style={styles.agentInitial}>
-              {myAssistant.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
-            </Text>
-          </View>
-          <Text style={styles.agentName}>{myAssistant.name}</Text>
-        </TouchableOpacity>
-      )}
-
-
       <FlatList
         data={filteredAgents}
         keyExtractor={(item) => item._id}

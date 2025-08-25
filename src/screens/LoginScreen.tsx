@@ -48,6 +48,40 @@ const LoginScreen = () => {
       console.log('🔑 Full OTP Response:', JSON.stringify(parsedData, null, 2));
       console.log('🔑 JWT Token (message):', parsedData?.message);
       
+      // 🔍 Decode JWT token to see payload
+      if (parsedData?.message) {
+        try {
+          const jwtToken = parsedData.message;
+          
+          console.log('🔗 FULL JWT TOKEN:');
+          console.log(jwtToken);
+     
+          
+          const base64Payload = jwtToken.split('.')[1];
+          const decodedPayload = JSON.parse(atob(base64Payload));
+          
+          console.log('🚀 JWT Token Decoded:');
+          console.log('📄 Header:', JSON.parse(atob(jwtToken.split('.')[0])));
+          console.log('📝 Payload:', decodedPayload);
+          console.log('🔐 Signature:', jwtToken.split('.')[2]);
+          
+          console.log('🔍 Available Fields in JWT:');
+          Object.keys(decodedPayload).forEach(key => {
+            console.log(`   - ${key}: ${decodedPayload[key]}`);
+          });
+          
+          if (!decodedPayload.email) {
+            console.log('❌ EMAIL FIELD MISSING IN JWT TOKEN');
+            console.log('⚠️  This is why we need hardcoded email in getAuthToken API');
+          } else {
+            console.log('✅ Email found in JWT:', decodedPayload.email);
+          }
+          
+        } catch (decodeError) {
+          console.error('❌ JWT Decode Error:', decodeError);
+        }
+      }
+      
       // Check multiple possible response formats for MSG91 OTP
       let isSuccess = false;
       let token = null;

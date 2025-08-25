@@ -25,9 +25,12 @@ export interface AgentDetails {
 
 export interface ChatThread {
   tid: string;
+  threadName?: string;  // Thread name from server
   messages: Message[];
   agentId: string;
   createdAt: Date;
+  updatedAt?: Date;     // Last updated timestamp
+  serverId?: string;    // Server's _id for reference
 }
 
 export class ChatAPI {
@@ -58,94 +61,75 @@ export class ChatAPI {
     }
   }
 
-  // Load thread history from server
+  // Load thread messages from server API
   static async loadThreadHistory(threadId: string, agentId: string, agentDetails: AgentDetails): Promise<Message[]> {
     try {
-      console.log('🔄 Loading Thread History for:', threadId);
+      console.log('🔄 Loading Thread Messages for:', threadId);
+      console.log('🔍 ThreadId type:', typeof threadId, 'Length:', threadId?.length);
       
-      if (!agentDetails?.orgId) {
-        console.log('⚠️ No orgId available, skipping thread history load');
-        return [];
-      }
-      
-      const threadEndpoint = `https://chat.50agents.com/${agentDetails.orgId}/${agentId}/chat`;
-      const params = new URLSearchParams({
-        thread: threadId,
-        _rsc: '1mygd'
-      });
-      
-      console.log('🌐 Thread API Endpoint:', `${threadEndpoint}?${params}`);
-    
       const token = await AsyncStorage.getItem('proxy_auth_token');
       if (!token) {
         console.log('❌ No proxy auth token found');
         return [];
       }
       
-      const response = await fetch(`${threadEndpoint}?${params}`, {
+      // Use the cleaner messages API endpoint
+      const messagesEndpoint = `https://routes.msg91.com/api/proxy/870623/36jowpr17/chat/message/${threadId}`;
+      console.log('🌐 Messages API Endpoint:', messagesEndpoint);
+      console.log('🔑 Using token:', token.substring(0, 20) + '...');
+    
+      const response = await fetch(messagesEndpoint, {
         method: 'GET',
         headers: {
           'accept': '*/*',
           'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
           'cache-control': 'no-cache',
-          'cookie': `proxy_auth_token=${token}`,
-          'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%5B%22orgId%22%2C%22' + agentDetails.orgId + '%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%5B%22assistantId%22%2C%22' + agentId + '%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%22chat%22%2C%7B%22children%22%3A%5B%22__PAGE__%3F%7B%5C%22thread%5C%22%3A%5C%22' + threadId + '%5C%22%7D%22%2C%7B%7D%2C%22%2F' + agentDetails.orgId + '%2F' + agentId + '%2Fchat%3Fthread%3D' + threadId + '%22%2C%22refresh%22%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
-          'next-url': `/${agentDetails.orgId}/${agentId}/chat`,
+          'content-type': 'application/json',
+          'origin': 'https://chat.50agents.com',
           'pragma': 'no-cache',
           'priority': 'u=1, i',
-          'referer': `https://chat.50agents.com/${agentDetails.orgId}/${agentId}/chat?thread=${threadId}`,
-          'rsc': '1',
+          'proxy_auth_token': token,
+          'referer': 'https://chat.50agents.com/',
           'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
           'sec-ch-ua-mobile': '?0',
           'sec-ch-ua-platform': '"macOS"',
           'sec-fetch-dest': 'empty',
           'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'same-origin',
+          'sec-fetch-site': 'cross-site',
           'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
         }
       });
       
-      console.log('✅ Thread History Response Status:', response.status);
+      console.log('✅ Messages Response Status:', response.status);
       
       if (response.ok) {
-        const responseText = await response.text();
-        console.log('📨 Thread History Response:', responseText.substring(0, 500) + '...');
+        const responseData = await response.json();
+        console.log('📨 Messages Response:', JSON.stringify(responseData, null, 2));
         
-        const messageMatches = responseText.match(/"text":"([^"]+)"/g);
-        const timestampMatches = responseText.match(/"timestamp":"([^"]+)"/g);
-        const userMatches = responseText.match(/"isUser":(true|false)/g);
-        
-        if (messageMatches && messageMatches.length > 0) {
-          const loadedMessages: Message[] = [];
+        if (responseData.success && responseData.data?.messages) {
+          const serverMessages = responseData.data.messages;
           
-          for (let i = 0; i < messageMatches.length; i++) {
-            const text = messageMatches[i].match(/"text":"([^"]+)"/)?.[1] || '';
-            const isUser = userMatches?.[i]?.includes('true') || false;
-            const timestamp = timestampMatches?.[i]?.match(/"timestamp":"([^"]+)"/)?.[1];
-            
-            if (text) {
-              loadedMessages.push({
-                id: `loaded_${i}`,
-                text: text.replace(/\\n/g, '\n').replace(/\\"/g, '"'),
-                isUser,
-                timestamp: timestamp ? new Date(timestamp) : new Date()
-              });
-            }
-          }
+          // Convert server messages to app format
+          const loadedMessages: Message[] = serverMessages.map((msg: any, index: number) => ({
+            id: msg.id?.toString() || `msg_${index}`,
+            text: msg.content || '',
+            isUser: msg.role === 'user',
+            timestamp: new Date(msg.createdAt)
+          }));
           
-          if (loadedMessages.length > 0) {
-            console.log('💬 Loaded', loadedMessages.length, 'messages from server');
-            return loadedMessages;
-          }
+          console.log('✅ Loaded messages count:', loadedMessages.length);
+          return loadedMessages;
+        } else {
+          console.log('⚠️ No messages in response or API error');
+          return [];
         }
       } else {
-        console.log('❌ Thread History API Error:', response.status, response.statusText);
+        console.log('❌ Messages API failed with status:', response.status);
+        return [];
       }
       
-      return [];
-      
-    } catch (error) {
-      console.log('❌ Thread History Load Error:', error);
+    } catch (error: any) {
+      console.log('❌ Error loading thread messages:', error);
       return [];
     }
   }
@@ -229,10 +213,96 @@ export class ChatAPI {
     }
   }
 
-  // Load all threads for an agent
+  // Load all threads for an agent from server API
   static async loadAllThreads(agentId: string): Promise<ChatThread[]> {
     try {
-      console.log('📂 Loading all threads for agent:', agentId);
+      console.log('📂 Loading all threads from server for agent:', agentId);
+      
+      // Get proxy auth token
+      const token = await AsyncStorage.getItem('proxy_auth_token');
+      if (!token) {
+        console.log('❌ No proxy auth token found');
+        return [];
+      }
+
+      // API credentials (stable values)
+      const companyId = '870623';
+      const userId = '36jowpr17';
+      
+      // Construct API URL
+      const apiUrl = `https://routes.msg91.com/api/proxy/${companyId}/${userId}/thread/${agentId}`;
+      
+      console.log('🌐 Fetching threads from:', apiUrl);
+      
+      // Make API call with exact curl headers
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
+          'cache-control': 'no-cache',
+          'content-type': 'application/json',
+          'origin': 'https://chat.50agents.com',
+          'pragma': 'no-cache',
+          'priority': 'u=1, i',
+          'proxy_auth_token': token,
+          'referer': 'https://chat.50agents.com/',
+          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'cross-site',
+          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+        }
+      });
+
+      if (!response.ok) {
+        console.log('❌ API response not ok:', response.status, response.statusText);
+        return [];
+      }
+
+      const result = await response.json();
+      console.log('📋 Server threads response:', JSON.stringify(result, null, 2));
+
+      // Check if response is successful
+      if (result.status === 'success' && result.data?.threads) {
+        const serverThreads = result.data.threads;
+        console.log('✅ Loaded', serverThreads.length, 'threads from server');
+        
+        // Convert server threads to ChatThread format
+        const chatThreads: ChatThread[] = serverThreads.map((serverThread: any) => ({
+          tid: serverThread.middleware_id, // Use middleware_id as thread ID
+          threadName: serverThread.name,   // Thread name from server
+          agentId: agentId,
+          createdAt: new Date(serverThread.createdAt),
+          updatedAt: new Date(serverThread.updatedAt),
+          messages: [], // Will be loaded when thread is selected
+          serverId: serverThread._id  // Store server's _id for reference
+        }));
+        
+        // Sort by creation date (newest first)
+        chatThreads.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        
+        return chatThreads;
+      } else {
+        console.log('❌ API response format error:', result);
+        return [];
+      }
+      
+    } catch (error) {
+      console.log('❌ Error loading threads from server:', error);
+      
+      // Fallback to local threads if API fails
+      console.log('🔄 Falling back to local threads...');
+      return await this.loadLocalThreads(agentId);
+    }
+  }
+
+  // Fallback: Load local threads (previous implementation)
+  private static async loadLocalThreads(agentId: string): Promise<ChatThread[]> {
+    try {
+      console.log('📂 Loading local threads for agent:', agentId);
       
       const allKeys = await AsyncStorage.getAllKeys();
       const threadKeys = allKeys.filter(key => key.startsWith(`thread_messages_`));
@@ -267,16 +337,16 @@ export class ChatAPI {
             }
           }
         } catch (error) {
-          console.log('❌ Error loading thread:', key, error);
+          console.log('❌ Error loading local thread:', key, error);
         }
       }
       
       threads.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      console.log('📋 Loaded', threads.length, 'threads for agent');
+      console.log('📋 Loaded', threads.length, 'local threads for agent');
       
       return threads;
     } catch (error) {
-      console.log('❌ Error loading all threads:', error);
+      console.log('❌ Error loading local threads:', error);
       return [];
     }
   }
