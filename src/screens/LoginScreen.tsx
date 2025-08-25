@@ -44,7 +44,13 @@ const LoginScreen = () => {
         }
       }
       
-
+      // 🚀 Console the initial JWT response structure
+      
+      console.log('🔑 JWT Token (message):', parsedData?.message);
+      
+      
+      
+      
       
       // Check multiple possible response formats
       let isSuccess = false;
@@ -210,18 +216,19 @@ const LoginScreen = () => {
       const errorMessage = error?.message || 'Failed to complete OTP verification';
       console.error('OTP Error:', errorMessage, error);
       
-      // Reset states
+      // Reset states but keep modal open for retry
       setOtpVerified(false);
-      setModalVisible(false);
+      // DON'T close modal - keep user on OTP screen
+      // setModalVisible(false); // Removed this line
       
-      // Show user-friendly error message
+      // Show user-friendly error message for OTP retry
       Alert.alert(
-        'Login Failed', 
-        errorMessage,
+        'Invalid OTP', 
+        'Please enter the correct OTP. Check your messages and try again.',
         [{
           text: 'OK',
           onPress: () => {
-            // Reset the form after user acknowledges the error
+            // Keep user on OTP screen for retry
             setOtpVerified(false);
             setIsLoading(false);
           }

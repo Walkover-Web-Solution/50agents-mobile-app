@@ -20,6 +20,7 @@ export type RootStackParamList = {
     agentName: string;
     agentLogo?: string;
     agentColor?: string;
+    threadId?: string; // For continuing existing conversations
   };
   
   // Add other screens here as needed

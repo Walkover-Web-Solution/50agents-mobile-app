@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -40,82 +40,69 @@ interface AgentDetails {
   ownerName: string;
 }
 
+interface ChatThread {
+  tid: string;
+  messages: Message[];
+  agentId: string;
+  createdAt: Date;
+}
+
 const ChatScreen = () => {
   const navigation = useNavigation<ChatNavProp>();
   const route = useRoute<ChatRouteProp>();
-  const { agentId, agentName, agentColor } = route.params;
+  const { agentId, agentName, agentColor, threadId } = route.params;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [agentDetails, setAgentDetails] = useState<AgentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(threadId || null);
+  
+  const flatListRef = useRef<FlatList>(null);
 
-  /**
-   * Generate consistent color for agent based on name
-   * Same function as in DashboardScreen
-   */
-  const getAgentColor = (name: string) => {
-    // Use passed color if available, otherwise generate
-    if (agentColor) return agentColor;
-    
-    const colors = [
-      '#6366f1', // Purple
-      '#3b82f6', // Blue  
-      '#10b981', // Green
-      '#f59e0b', // Orange
-      '#ef4444', // Red
-      '#8b5cf6', // Violet
-      '#06b6d4', // Cyan
-      '#84cc16', // Lime
-    ];
-    
-    // Generate consistent hash from name
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-  };
-
-  // Fetch agent details on component mount
+  // Phase 1: Agent Config Loading (UI Bootstrap)
   useEffect(() => {
-    fetchAgentDetails();
+    loadAgentConfig();
+    if (threadId) {
+      loadThreadHistory(threadId);
+    }
   }, []);
 
-  const fetchAgentDetails = async () => {
+  const loadAgentConfig = async () => {
     try {
-
-      const response = await api.get(`/proxy/870623/36jowpr17/agent/${agentId}`);
+      console.log('🚀 PHASE 1: Loading Agent Config...');
+      console.log('📋 Agent ID:', agentId);
       
-      if (response.data.success && response.data.data) {
-        const details = response.data.data;
+      // Step 1: Load agent details
+      const agentResponse = await api.get(`/proxy/870623/36jowpr17/agent/${agentId}`);
+      
+      if (agentResponse.data.success && agentResponse.data.data) {
+        const details = agentResponse.data.data;
         setAgentDetails(details);
         
-        // Add welcome message
-        const welcomeMessage: Message = {
-          id: '1',
-          text: `Hello! I'm ${details.name}. ${details.instructions || 'How can I help you today?'}`,
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages([welcomeMessage]);
-        
-
+        console.log('✅ Agent Config Loaded:');
+        console.log('🤖 Name:', details.name);
+        console.log('🧠 LLM:', details.llm);
+        console.log('📝 Instructions:', details.instructions);
+        console.log('🌉 Bridge ID:', details.bridgeId);
+        console.log('🏢 Org ID:', details.orgId);
       }
+      
     } catch (error) {
-
-      // Fallback welcome message
-      const fallbackMessage: Message = {
-        id: '1',
-        text: `Hello! I'm ${agentName}. How can I help you today?`,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages([fallbackMessage]);
+      console.log('❌ Agent Config Load Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadThreadHistory = async (tid: string) => {
+    try {
+      console.log('🔄 Loading Thread History for:', tid);
+      // This would be the GET /chat?thread=<tid>&_rsc=... call
+      // For now, we'll skip this as it requires Next.js RSC handling
+    } catch (error) {
+      console.log('❌ Thread History Load Error:', error);
     }
   };
 
@@ -135,44 +122,71 @@ const ChatScreen = () => {
     setSendingMessage(true);
 
     try {
-      // Try chat API using the discovered endpoint pattern
-      const chatEndpoint = `/proxy/870623/36jowpr17/chat/${agentDetails?.orgId}/${agentId}`;
+      console.log('🚀 PHASE 2/4: Sending Message...');
+      console.log('📝 User Message:', messageText);
+      console.log('🧵 Current Thread ID:', currentThreadId);
+      
+      // Correct API endpoint as per your flow
+      const chatEndpoint = currentThreadId 
+        ? `/proxy/870623/36jowpr17/chat/message?tid=${currentThreadId}`
+        : `/proxy/870623/36jowpr17/chat/message`;
       
       const chatPayload = {
         message: messageText,
-        bridgeId: agentDetails?.bridgeId,
-        agentId: agentId,
-        orgId: agentDetails?.orgId
+        agent: agentId, // Use 'agent' instead of 'agentId' as per your flow
       };
+      
+      console.log('🌐 API Endpoint:', chatEndpoint);
+      console.log('📦 Payload:', chatPayload);
       
       // Make API call to send message
       const response = await api.post(chatEndpoint, chatPayload);
       
-      if (response.data.success && response.data.data) {
+      console.log('✅ API Response Status:', response.status);
+      console.log('📨 Full Response:', response.data);
+      
+      if (response.data.status === 'success' && response.data.data) {
+        const responseData = response.data.data;
+        
+        // Phase 2: New thread creation (first message)
+        if (!currentThreadId && responseData.tid) {
+          console.log('🆕 NEW THREAD CREATED:', responseData.tid);
+          setCurrentThreadId(responseData.tid);
+        }
+        
+        // Add agent response to messages
         const agentResponse: Message = {
           id: (Date.now() + 1).toString(),
-          text: response.data.data.message || response.data.data.response || 'Response received from agent',
+          text: responseData.message || 'Response received from agent',
           isUser: false,
           timestamp: new Date(),
         };
+        
         setMessages(prev => [...prev, agentResponse]);
-
+        console.log('🤖 Agent Response Added:', agentResponse.text);
+        
+        // Phase 5: Check if this was an action/tool execution
+        if (responseData.message.includes('successfully sent') || 
+            responseData.message.includes('email has been') ||
+            responseData.message.includes('completed')) {
+          console.log('🔧 ACTION EXECUTED: Tool/Integration used');
+        }
+        
       } else {
-        // Fallback response if API structure is different
-        const fallbackResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: `Message sent successfully! (Using ${agentDetails?.llm.model})`,
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, fallbackResponse]);
-
+        throw new Error('Invalid response structure');
       }
       
-      setSendingMessage(false);
+    } catch (error: any) {
+      console.log('❌ CHAT ERROR:', error);
+      console.log('❌ Error Response:', error.response?.data);
       
-    } catch (error) {
-
+      // Handle specific error codes
+      if (error.response?.status === 429) {
+        console.log('⏳ RATE LIMITED: Too many requests');
+      } else if (error.response?.status === 400) {
+        console.log('🔑 AUTH ERROR: Token/config issue');
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         text: 'Sorry, I encountered an error. Please try again.',
@@ -180,24 +194,122 @@ const ChatScreen = () => {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
+      
+    } finally {
       setSendingMessage(false);
+      // Auto-scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View style={[
-      styles.messageContainer,
-      item.isUser ? styles.userMessage : styles.agentMessage
-    ]}>
-      <Text style={[
-        styles.messageText,
-        item.isUser ? styles.userMessageText : styles.agentMessageText
-      ]}>
-        {item.text}
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
+    const showDateSeparator = () => {
+      if (index === 0) return true;
+      const currentDate = new Date(item.timestamp).toDateString();
+      const previousDate = new Date(messages[index - 1].timestamp).toDateString();
+      return currentDate !== previousDate;
+    };
+
+    const formatTime = (timestamp: Date) => {
+      return timestamp.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    };
+
+    const formatDate = (timestamp: Date) => {
+      const today = new Date();
+      const messageDate = new Date(timestamp);
+      
+      if (messageDate.toDateString() === today.toDateString()) {
+        return 'Today';
+      }
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (messageDate.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+      }
+      
+      return messageDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    };
+
+    // Generate user initials (e.g., "KS" for Kartik Shrivastav)
+    const getUserInitials = () => {
+      return 'KS'; // You can make this dynamic based on user data
+    };
+
+    // Generate agent initials from agent name
+    const getAgentInitials = () => {
+      if (!agentDetails?.name) return 'AI';
+      return agentDetails.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    };
+
+    return (
+      <>
+        {showDateSeparator() && (
+          <View style={styles.dateSeparator}>
+            <Text style={styles.dateText}>{formatDate(item.timestamp)}</Text>
+          </View>
+        )}
+        
+        {item.isUser ? (
+          // USER MESSAGE - Web style: Header above bubble, right aligned
+          <View style={styles.userMessageWrapper}>
+            <View style={styles.userHeader}>
+              <Text style={styles.userHeaderText}>You {formatTime(item.timestamp)}</Text>
+              <View style={styles.userAvatar}>
+                <Text style={styles.userInitial}>{getUserInitials()}</Text>
+              </View>
+            </View>
+            <View style={styles.userBubble}>
+              <Text style={styles.userMessageText}>
+                {item.text}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          // AGENT MESSAGE - Web style: Header above bubble, left aligned  
+          <View style={styles.agentMessageWrapper}>
+            <View style={styles.agentHeader}>
+              <View style={styles.agentAvatar}>
+                <Text style={styles.agentInitial}>{getAgentInitials()}</Text>
+              </View>
+              <Text style={styles.agentHeaderText}>
+                {agentDetails?.name || 'Assistant'} {formatTime(item.timestamp)}
+              </Text>
+            </View>
+            <View style={styles.agentBubble}>
+              <Text style={styles.agentMessageText}>
+                {item.text}
+              </Text>
+            </View>
+          </View>
+        )}
+      </>
+    );
+  };
+
+  const renderWelcomeScreen = () => (
+    <View style={styles.welcomeContainer}>
+      <Text style={styles.welcomeTitle}>
+        {agentDetails?.name || agentName}
       </Text>
-      <Text style={styles.timestamp}>
-        {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      <Text style={styles.welcomeSubtitle}>
+        {agentDetails?.instructions || 'Your intelligent assistant for productivity and creativity'}
       </Text>
+      {agentDetails?.llm && (
+        <Text style={styles.modelInfo}>
+          Powered by {agentDetails.llm.service} {agentDetails.llm.model}
+        </Text>
+      )}
     </View>
   );
 
@@ -205,8 +317,8 @@ const ChatScreen = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1a73e8" />
-          <Text style={styles.loadingText}>Loading chat...</Text>
+          <ActivityIndicator size="large" color="#6b7280" />
+          <Text style={styles.loadingText}>Loading agent configuration...</Text>
         </View>
       </SafeAreaView>
     );
@@ -217,7 +329,7 @@ const ChatScreen = () => {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -227,55 +339,65 @@ const ChatScreen = () => {
           >
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-          <View style={styles.agentInfo}>
-            <View style={[styles.agentAvatar, { backgroundColor: getAgentColor(agentName) }]}>
-              <Text style={styles.agentInitial}>
-                {agentName.substring(0, 2).toUpperCase()}
+          <View style={styles.headerInfo}>
+            <View style={styles.headerAvatar}>
+              <Text style={styles.headerInitial}>
+                {agentDetails?.name ? agentDetails.name.substring(0, 2).toUpperCase() : 'AI'}
               </Text>
             </View>
-            <Text style={styles.agentName}>{agentName}</Text>
+            <Text style={styles.headerTitle}>
+              {agentDetails?.name || agentName}
+            </Text>
           </View>
           <View style={styles.headerSpacer} />
         </View>
 
-        {/* Messages */}
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          style={styles.messagesList}
-          contentContainerStyle={styles.messagesContainer}
-          keyboardShouldPersistTaps="handled"
-        />
+        {/* Messages or Welcome Screen */}
+        {messages.length === 0 ? (
+          renderWelcomeScreen()
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={({ item, index }) => renderMessage({ item, index })}
+            keyExtractor={(item) => item.id}
+            style={styles.messagesList}
+            contentContainerStyle={styles.messagesContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
-        {/* Input */}
+        {/* Input Container */}
         <View style={styles.inputContainer}>
-          <View style={styles.inputRow}>
+          <View style={styles.inputWrapper}>
             <TextInput
               style={styles.textInput}
               value={inputText}
               onChangeText={setInputText}
               placeholder="Type your message..."
-              placeholderTextColor="#888"
+              placeholderTextColor="#6b7280"
               multiline
               maxLength={1000}
             />
             <TouchableOpacity 
               style={[
-                styles.sendButton, 
-                inputText.trim() && !sendingMessage ? styles.sendButtonActive : null,
-                sendingMessage ? styles.sendButtonLoading : null
+                styles.sendButton,
+                (inputText.trim() && !sendingMessage) ? styles.sendButtonActive : styles.sendButtonInactive
               ]}
               onPress={sendMessage}
               disabled={!inputText.trim() || sendingMessage}
             >
               {sendingMessage ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color="#6b7280" />
               ) : (
-                <Text style={styles.sendButtonText}>Send</Text>
+                <Text style={styles.sendIcon}>→</Text>
               )}
             </TouchableOpacity>
           </View>
+          <Text style={styles.inputHint}>
+            {currentThreadId ? `Thread: ${currentThreadId.substring(0, 8)}...` : 'Press Shift+Enter for a new line'}
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -285,7 +407,7 @@ const ChatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#212121',
   },
   flex: {
     flex: 1,
@@ -294,133 +416,230 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#212121',
   },
   loadingText: {
-    color: '#fff',
-    marginTop: 10,
+    color: '#9ca3af',
+    marginTop: 12,
     fontSize: 16,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
-  },
-  backButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#2a2a2a',
-  },
-  backArrow: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  agentInfo: {
+  welcomeContainer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 15,
-  },
-  agentAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    paddingHorizontal: 40,
   },
-  agentInitial: {
-    color: '#fff',
+  welcomeTitle: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 8,
   },
-  agentName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  headerSpacer: {
-    width: 36,
+  modelInfo: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   messagesList: {
     flex: 1,
   },
   messagesContainer: {
-    padding: 15,
+    padding: 20,
+    paddingBottom: 10,
   },
-  messageContainer: {
-    marginVertical: 5,
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 15,
+  userMessageWrapper: {
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    marginVertical: 8,
   },
-  userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#1a73e8',
+  userHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  agentMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#2a2a2a',
+  userHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginRight: 8,
   },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
+  userAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+  },
+  userInitial: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  userBubble: {
+    borderRadius: 18,
+    padding: 16,
+    maxWidth: '85%',
+    backgroundColor: '#2563eb',
+    marginLeft: 16,
   },
   userMessageText: {
-    color: '#fff',
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  agentMessageWrapper: {
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    marginVertical: 8,
+  },
+  agentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  agentAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+  },
+  agentInitial: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  agentHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginLeft: 8,
+  },
+  agentBubble: {
+    borderRadius: 18,
+    padding: 16,
+    maxWidth: '85%',
+    backgroundColor: '#374151',
+    marginRight: 16,
   },
   agentMessageText: {
-    color: '#fff',
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#aaa',
-    marginTop: 5,
-    alignSelf: 'flex-end',
+    fontSize: 16,
+    color: '#ffffff',
   },
   inputContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
-    backgroundColor: '#1a1a1a',
-    paddingBottom: Platform.OS === 'ios' ? 15 : 10,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    backgroundColor: '#212121',
   },
-  inputRow: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 8,
+    backgroundColor: '#374151',
+    borderRadius: 24,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    marginBottom: 8,
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
-    maxHeight: 100,
-    marginRight: 10,
+    lineHeight: 22,
+    maxHeight: 120,
+    paddingVertical: 0,
   },
   sendButton: {
-    backgroundColor: '#333',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   sendButtonActive: {
-    backgroundColor: '#1a73e8',
+    backgroundColor: '#ffffff',
   },
-  sendButtonLoading: {
-    backgroundColor: '#666',
+  sendButtonInactive: {
+    backgroundColor: 'transparent',
   },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  sendIcon: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#212121',
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  dateSeparator: {
+    marginVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2f343a',
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    fontSize: 24,
+    color: '#ffffff',
+  },
+  headerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+    marginRight: 8,
+  },
+  headerInitial: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  headerSpacer: {
+    width: 32,
   },
 });
 
