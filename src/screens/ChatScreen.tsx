@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../api/axios';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
@@ -58,6 +60,8 @@ const ChatScreen = () => {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(threadId || null);
+  const [showThreadsList, setShowThreadsList] = useState(false);
+  const [allThreads, setAllThreads] = useState<ChatThread[]>([]);
   
   const flatListRef = useRef<FlatList>(null);
 
@@ -67,6 +71,7 @@ const ChatScreen = () => {
     if (threadId) {
       loadThreadHistory(threadId);
     }
+    loadAllThreads();
   }, []);
 
   const loadAgentConfig = async () => {
@@ -99,11 +104,204 @@ const ChatScreen = () => {
   const loadThreadHistory = async (tid: string) => {
     try {
       console.log('🔄 Loading Thread History for:', tid);
-      // This would be the GET /chat?thread=<tid>&_rsc=... call
-      // For now, we'll skip this as it requires Next.js RSC handling
+      
+      // Get organization ID and agent details for API call
+      if (!agentDetails?.orgId) {
+        console.log('⚠️ No orgId available, skipping thread history load');
+        return;
+      }
+      
+      const threadEndpoint = `https://chat.50agents.com/${agentDetails.orgId}/${agentId}/chat`;
+      const params = new URLSearchParams({
+        thread: tid,
+        _rsc: '1mygd'
+      });
+      
+      console.log('🌐 Thread API Endpoint:', `${threadEndpoint}?${params}`);
+    
+      // Get proxy auth token from storage
+      const token = await AsyncStorage.getItem('proxy_auth_token');
+      if (!token) {
+        console.log('❌ No proxy auth token found');
+        return;
+      }
+      
+      // Make API call to load thread history
+      const response = await fetch(`${threadEndpoint}?${params}`, {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
+          'cache-control': 'no-cache',
+          'cookie': `proxy_auth_token=${token}`,
+          'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%5B%22orgId%22%2C%22' + agentDetails.orgId + '%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%5B%22assistantId%22%2C%22' + agentId + '%22%2C%22d%22%5D%2C%7B%22children%22%3A%5B%22chat%22%2C%7B%22children%22%3A%5B%22__PAGE__%3F%7B%5C%22thread%5C%22%3A%5C%22' + tid + '%5C%22%7D%22%2C%7B%7D%2C%22%2F' + agentDetails.orgId + '%2F' + agentId + '%2Fchat%3Fthread%3D' + tid + '%22%2C%22refresh%22%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
+          'next-url': `/${agentDetails.orgId}/${agentId}/chat`,
+          'pragma': 'no-cache',
+          'priority': 'u=1, i',
+          'referer': `https://chat.50agents.com/${agentDetails.orgId}/${agentId}/chat?thread=${tid}`,
+          'rsc': '1',
+          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-origin',
+          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+        }
+      });
+      
+      console.log('✅ Thread History Response Status:', response.status);
+      
+      if (response.ok) {
+        const responseText = await response.text();
+        console.log('📨 Thread History Response:', responseText.substring(0, 500) + '...');
+        
+        // Parse the Next.js RSC response to extract messages
+        // This is complex as it's React Server Components format
+        // For now, we'll try to extract any JSON-like message data
+        try {
+          // Look for message patterns in the RSC response
+          const messageMatches = responseText.match(/"text":"([^"]+)"/g);
+          const timestampMatches = responseText.match(/"timestamp":"([^"]+)"/g);
+          const userMatches = responseText.match(/"isUser":(true|false)/g);
+          
+          if (messageMatches && messageMatches.length > 0) {
+            const loadedMessages: Message[] = [];
+            
+            for (let i = 0; i < messageMatches.length; i++) {
+              const text = messageMatches[i].match(/"text":"([^"]+)"/)?.[1] || '';
+              const isUser = userMatches?.[i]?.includes('true') || false;
+              const timestamp = timestampMatches?.[i]?.match(/"timestamp":"([^"]+)"/)?.[1];
+              
+              if (text) {
+                loadedMessages.push({
+                  id: `loaded_${i}`,
+                  text: text.replace(/\\n/g, '\n').replace(/\\"/g, '"'),
+                  isUser,
+                  timestamp: timestamp ? new Date(timestamp) : new Date()
+                });
+              }
+            }
+            
+            if (loadedMessages.length > 0) {
+              console.log('💬 Loaded', loadedMessages.length, 'messages from server');
+              setMessages(loadedMessages);
+              
+              // Save to local storage for offline access
+              await saveThreadData(tid, loadedMessages);
+              
+              // Auto-scroll to bottom
+              setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              }, 500);
+            }
+          }
+        } catch (parseError) {
+          console.log('⚠️ Could not parse thread history, using local storage fallback');
+        }
+      } else {
+        console.log('❌ Thread History API Error:', response.status, response.statusText);
+      }
+      
     } catch (error) {
       console.log('❌ Thread History Load Error:', error);
+      // Fallback to local storage if API fails
+      console.log('🔄 Falling back to local storage...');
     }
+  };
+
+  const saveThreadData = async (threadId: string, messages: Message[]) => {
+    try {
+      const threadData: ChatThread = {
+        tid: threadId,
+        messages,
+        agentId,
+        createdAt: new Date(),
+      };
+      await AsyncStorage.setItem(`thread-${threadId}`, JSON.stringify(threadData));
+      console.log('✅ Thread data saved:', threadId);
+    } catch (error) {
+      console.log('❌ Error saving thread data:', error);
+    }
+  };
+
+  const loadAllThreads = async () => {
+    try {
+      console.log('📂 Loading all threads for agent:', agentId);
+      
+      // Get all storage keys
+      const allKeys = await AsyncStorage.getAllKeys();
+      const threadKeys = allKeys.filter(key => key.startsWith(`thread_messages_`));
+      
+      const threads: ChatThread[] = [];
+      
+      for (const key of threadKeys) {
+        try {
+          const messagesData = await AsyncStorage.getItem(key);
+          if (messagesData) {
+            const messages = JSON.parse(messagesData);
+            const threadId = key.replace('thread_messages_', '');
+            
+            // Check if this thread belongs to current agent
+            const threadKey = `agent_thread_${agentId}`;
+            const threadData = await AsyncStorage.getItem(threadKey);
+            
+            if (threadData) {
+              const parsedThreadData = JSON.parse(threadData);
+              if (parsedThreadData.threadId === threadId) {
+                const messagesWithDates = messages.map((msg: any) => ({
+                  ...msg,
+                  timestamp: new Date(msg.timestamp)
+                }));
+                
+                threads.push({
+                  tid: threadId,
+                  messages: messagesWithDates,
+                  agentId,
+                  createdAt: new Date(parsedThreadData.lastUpdated)
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.log('❌ Error loading thread:', key, error);
+        }
+      }
+      
+      // Sort threads by creation date (newest first)
+      threads.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
+      setAllThreads(threads);
+      console.log('📋 Loaded', threads.length, 'threads for agent');
+      
+    } catch (error) {
+      console.log('❌ Error loading all threads:', error);
+    }
+  };
+
+  const switchToThread = async (thread: ChatThread) => {
+    try {
+      console.log('🔄 Switching to thread:', thread.tid);
+      
+      setCurrentThreadId(thread.tid);
+      setMessages(thread.messages);
+      setShowThreadsList(false);
+      
+      // Auto-scroll to bottom
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 300);
+      
+    } catch (error) {
+      console.log('❌ Error switching thread:', error);
+    }
+  };
+
+  const createNewThread = () => {
+    console.log('🆕 Creating new thread');
+    setCurrentThreadId(null);
+    setMessages([]);
+    setShowThreadsList(false);
   };
 
   const sendMessage = async () => {
@@ -116,10 +314,13 @@ const ChatScreen = () => {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
     const messageText = inputText.trim();
     setInputText('');
     setSendingMessage(true);
+
+    // Add user message to state
+    let updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
 
     try {
       console.log('🚀 PHASE 2/4: Sending Message...');
@@ -162,7 +363,9 @@ const ChatScreen = () => {
           timestamp: new Date(),
         };
         
-        setMessages(prev => [...prev, agentResponse]);
+        // Update messages with agent response
+        updatedMessages = [...updatedMessages, agentResponse];
+        setMessages(updatedMessages);
         console.log('🤖 Agent Response Added:', agentResponse.text);
         
         // Phase 5: Check if this was an action/tool execution
@@ -170,6 +373,12 @@ const ChatScreen = () => {
             responseData.message.includes('email has been') ||
             responseData.message.includes('completed')) {
           console.log('🔧 ACTION EXECUTED: Tool/Integration used');
+        }
+        
+        // Save thread data after successful message exchange
+        const threadIdToSave = currentThreadId || responseData.tid;
+        if (threadIdToSave) {
+          await saveThreadData(threadIdToSave, updatedMessages);
         }
         
       } else {
@@ -193,7 +402,14 @@ const ChatScreen = () => {
         isUser: false,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      
+      updatedMessages = [...updatedMessages, errorMessage];
+      setMessages(updatedMessages);
+      
+      // Save thread data even with error message
+      if (currentThreadId) {
+        await saveThreadData(currentThreadId, updatedMessages);
+      }
       
     } finally {
       setSendingMessage(false);
@@ -350,6 +566,12 @@ const ChatScreen = () => {
             </Text>
           </View>
           <View style={styles.headerSpacer} />
+          <TouchableOpacity 
+            style={styles.threadsButton}
+            onPress={() => setShowThreadsList(true)}
+          >
+            <Text style={styles.threadsIcon}>🗂️</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Messages or Welcome Screen */}
@@ -400,6 +622,80 @@ const ChatScreen = () => {
           </Text>
         </View>
       </KeyboardAvoidingView>
+      <Modal
+        visible={showThreadsList}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowThreadsList(false)}
+      >
+        <SafeAreaView style={styles.threadsModal}>
+          {/* Threads Modal Header */}
+          <View style={styles.threadsHeader}>
+            <Text style={styles.threadsTitle}>Chat History</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowThreadsList(false)}
+            >
+              <Text style={styles.closeIcon}>×</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* New Thread Button */}
+          <TouchableOpacity 
+            style={styles.newThreadButton}
+            onPress={createNewThread}
+          >
+            <Text style={styles.newThreadIcon}>+</Text>
+            <Text style={styles.newThreadText}>New Conversation</Text>
+          </TouchableOpacity>
+          
+          {/* Threads List */}
+          <FlatList
+            data={allThreads}
+            keyExtractor={(item) => item.tid}
+            style={styles.threadsList}
+            contentContainerStyle={styles.threadsContainer}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[
+                  styles.threadItem,
+                  currentThreadId === item.tid && styles.activeThreadItem
+                ]}
+                onPress={() => switchToThread(item)}
+              >
+                <View style={styles.threadInfo}>
+                  <Text style={styles.threadTitle}>
+                    {item.messages.length > 0 
+                      ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
+                      : 'New conversation'
+                    }
+                  </Text>
+                  <Text style={styles.threadDate}>
+                    {item.createdAt.toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                </View>
+                <View style={styles.threadMeta}>
+                  <Text style={styles.messageCount}>{item.messages.length}</Text>
+                  {currentThreadId === item.tid && (
+                    <View style={styles.activeIndicator} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyThreads}>
+                <Text style={styles.emptyText}>No previous conversations</Text>
+                <Text style={styles.emptySubtext}>Start a new conversation to see it here</Text>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -541,9 +837,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   inputContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingHorizontal: 8,  // 20 se 8 kar do
+    paddingTop: 24,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 40,
     backgroundColor: '#212121',
   },
   inputWrapper: {
@@ -553,7 +849,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   textInput: {
     flex: 1,
@@ -640,6 +936,119 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 32,
+  },
+  threadsButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  threadsIcon: {
+    fontSize: 24,
+    color: '#ffffff',
+  },
+  threadsModal: {
+    flex: 1,
+    backgroundColor: '#212121',
+  },
+  threadsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2f343a',
+  },
+  threadsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeIcon: {
+    fontSize: 24,
+    color: '#ffffff',
+  },
+  newThreadButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#2563eb',
+    borderRadius: 24,
+  },
+  newThreadIcon: {
+    fontSize: 24,
+    color: '#ffffff',
+    marginRight: 8,
+  },
+  newThreadText: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  threadsList: {
+    flex: 1,
+  },
+  threadsContainer: {
+    padding: 20,
+  },
+  threadItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2f343a',
+  },
+  activeThreadItem: {
+    backgroundColor: '#2563eb',
+  },
+  threadInfo: {
+    flex: 1,
+  },
+  threadTitle: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  threadDate: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  threadMeta: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  messageCount: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginRight: 8,
+  },
+  activeIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2563eb',
+  },
+  emptyThreads: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 8,
   },
 });
 
