@@ -1,53 +1,60 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserEmail, saveProxyAuthToken, getProxyAuthToken } from '../utils/auth';
+import { getUserEmail, saveProxyAuthToken, getProxyAuthToken, saveUserEmail } from '../utils/auth';
 import { CONFIG } from '../config';
 
-// Function to get auth token using saved email
+// Function to get proxy auth token using JWT token from AsyncStorage
 export const getAuthToken = async (): Promise<string | null> => {
   try {
-    const userEmail = await getUserEmail();
-    console.log('Retrieved email from storage:', userEmail);
+    // Get JWT token from AsyncStorage (saved with TOKEN_KEY = 'proxyAuthToken')
+    const jwtToken = await AsyncStorage.getItem('proxyAuthToken');
+    console.log('🔍 Retrieved JWT token from storage for proxy generation');
+    console.log('🔑 JWT Token length:', jwtToken ? jwtToken.length : 'null');
+    console.log('🔑 JWT Token first 50 chars:', jwtToken ? jwtToken.substring(0, 50) + '...' : 'null');
     
-    if (!userEmail) {
-      console.log('No email found in storage');
+    if (!jwtToken) {
+      console.log('No JWT token found in storage');
       return null;
     }
 
-    const endpoint = `${CONFIG.API.BASE_URL}${CONFIG.API.ENDPOINTS.GET_AUTH_TOKEN}?user_id=${encodeURIComponent(userEmail)}`;
+    const endpoint = `https://dev-assistant-api-1091285226236.asia-south1.run.app/utility/get-proxy-token?otpToken=${encodeURIComponent(jwtToken)}`;
     
-    console.log('Making request to:', endpoint);
-    console.log('Using email:', userEmail);
+    console.log('Making proxy token request to:', endpoint);
     
     const response = await fetch(endpoint, {
-      method: 'GET', 
+      method: 'GET',
       headers: {
-        'authkey': CONFIG.API.AUTH_KEY,
         'Accept': 'application/json'
       },
     });
 
     if (response.ok) {
       const data = await response.json();
-      console.log('Response data:', JSON.stringify(data, null, 2));
+      console.log('Proxy token response data:', JSON.stringify(data, null, 2));
       
+      // Extract email and proxy token from response
+      const email = data.data?.email;
       const token = data.token || data.proxy_auth_token || data.data?.token || data.data?.proxy_auth_token;
       
       if (token) {
+        // Save both proxy token and email from API response
         await saveProxyAuthToken(token);
-        console.log('Proxy auth token generated and saved');
+        email && await saveUserEmail(email);
+        
+        console.log('✅ Proxy auth token generated and saved successfully');
         return token;
       } else {
-        console.log('No token found in response data');
+        console.log('❌ No proxy token found in response data');
+        console.log('🔍 Available keys in response:', Object.keys(data));
       }
     } else {
       const errorText = await response.text();
-      console.log('API Error Response:', errorText);
+      console.log('❌ Proxy token API Error Response:', errorText);
     }
     
     return null;
   } catch (error) {
-    console.log('Error generating auth token:', error);
+    console.log('❌ Error generating proxy auth token:', error);
     return null;
   }
 };
