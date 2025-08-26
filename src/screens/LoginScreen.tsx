@@ -11,7 +11,7 @@ import { OTPVerification } from '@msg91comm/react-native-sendotp';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveToken, saveUserEmail } from '../utils/auth';
+import { saveToken } from '../utils/auth';
 import { RootStackParamList } from '../types/navigation';
 import { CONFIG } from '../config';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
@@ -22,7 +22,6 @@ const LoginScreen = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [userEmail, setUserEmail] = useState(CONFIG.APP.DEFAULTS.USER_EMAIL); // From config
   const navigation = useNavigation<NavProp>();
 
   const handleOTPCompletion = async (data: any) => {
@@ -69,13 +68,6 @@ const LoginScreen = () => {
           Object.keys(decodedPayload).forEach(key => {
             console.log(`   - ${key}: ${decodedPayload[key]}`);
           });
-          
-          if (!decodedPayload.email) {
-            console.log('❌ EMAIL FIELD MISSING IN JWT TOKEN');
-            console.log('⚠️  This is why we need hardcoded email in getAuthToken API');
-          } else {
-            console.log('✅ Email found in JWT:', decodedPayload.email);
-          }
           
         } catch (decodeError) {
           console.error('❌ JWT Decode Error:', decodeError);
@@ -129,98 +121,19 @@ const LoginScreen = () => {
         
         console.log('🔑 JWT Token received successfully');
         
-        // Extract email using multiple fallbacks
-        let extractedEmail = '';
-        
-        // Priority 1: Try to get email from OTP response first
-        if (parsedData?.data?.email) {
-          extractedEmail = parsedData.data.email;
-          console.log('📧 Email found in OTP response data:', extractedEmail);
-        } else if (parsedData?.email) {
-          extractedEmail = parsedData.email;
-          console.log('📧 Email found in OTP response:', extractedEmail);
-        } else if (parsedData?.user_email) {
-          extractedEmail = parsedData.user_email;
-          console.log('📧 User email found in OTP response:', extractedEmail);
-        }
-        
-        // Priority 2: If no email in OTP response, try JWT token
-        if (!extractedEmail) {
-         try {
-           // JWT token format: header.payload.signature
-           const tokenParts = token.split('.');
-           if (tokenParts.length === 3) {
-             // Decode payload (base64)
-             const payload = JSON.parse(atob(tokenParts[1]));
-             console.log('🔍 JWT Payload:', JSON.stringify(payload, null, 2));
-             
-             // Extract email from JWT payload
-             extractedEmail = payload.email || payload.user_email || payload.sub || '';
-             if (extractedEmail) {
-               console.log('📧 Email found in JWT token:', extractedEmail);
-             }
-           }
-         } catch (error) {
-           console.log('⚠️ Failed to decode JWT token:', error);
-         }
-         }
-         
-         // Priority 3: Use the email entered by the user
-         if (!extractedEmail && userEmail) {
-           extractedEmail = userEmail.trim();
-           console.log('📧 Using user input email as fallback:', extractedEmail);
-         }
-         
-         // Priority 4: Hardcoded email fallback for testing
-         if (!extractedEmail) {
-           extractedEmail = CONFIG.APP.DEFAULTS.USER_EMAIL; // From config
-           console.log('📧 Using hardcoded email as final fallback:', extractedEmail);
-         }
-        
-        // Validate email is extracted
-        if (!extractedEmail || extractedEmail.trim() === '') {
-          Alert.alert('Email Required', 'Unable to extract email from login response. Please try again or contact support.');
-          setOtpVerified(false);
-          setIsLoading(false);
-          setModalVisible(false);
-          return;
-        }
-        
-        console.log('📧 Using email:', extractedEmail);
-        
-        // Check if user is using registered email
-        if(extractedEmail !== CONFIG.APP.DEFAULTS.USER_EMAIL){ // From config
-          Alert.alert(
-            'Registration Required', 
-            'Currently only ' + CONFIG.APP.DEFAULTS.USER_EMAIL + ' is supported.\n\nFor other emails, please register first on the 50Agents website.',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  setOtpVerified(false);
-                  setIsLoading(false);
-                  setModalVisible(false);
-                }
-              }
-            ]
-          );
-          return;
-        }
-        
         setOtpVerified(true);
         setIsLoading(true);
 
-        // Save JWT token and email
+        // Save JWT token - Email will be automatically extracted by proxy API
         await Promise.all([
           saveToken(token), // Save JWT token
-          saveUserEmail(extractedEmail), // Save user email
           AsyncStorage.removeItem('selectedCompany'),
           AsyncStorage.setItem('referenceId', CONFIG.APP.DEFAULTS.REFERENCE_ID), // From config
         ]);
         
-        console.log('✅ Email saved in AsyncStorage');
+        console.log('✅ JWT token saved in AsyncStorage');
         
-        // Generate proxy auth token
+        // Generate proxy auth token (this will automatically save the email from API response)
         const { getAuthToken } = require('../api/axios');
         const proxyToken = await getAuthToken();
         
