@@ -321,13 +321,23 @@ const ChatScreen = () => {
   const renderWelcomeScreen = () => (
     <View style={styles.welcomeContainer}>
       <Text style={styles.welcomeTitle}>
-        {agentDetails?.name || agentName}
+        {displayName}
       </Text>
       <Text style={styles.welcomeSubtitle}>
         {agentDetails?.instructions || 'Your intelligent assistant for productivity and creativity'}
       </Text>
     </View>
   );
+
+  // Helper function to capitalize names properly
+  const formatName = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const displayName = formatName(agentDetails?.name || agentName);
 
   if (loading) {
     return (
@@ -356,13 +366,13 @@ const ChatScreen = () => {
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
-            <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(agentDetails?.name || agentName) }]}>
+            <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>
               <Text style={styles.headerInitial}>
-                {getAvatarInitials(agentDetails?.name || agentName)}
+                {getAvatarInitials(displayName)}
               </Text>
             </View>
             <Text style={styles.headerTitle}>
-              {agentDetails?.name || agentName}
+              {displayName}
             </Text>
           </View>
           <View style={styles.headerSpacer} />
