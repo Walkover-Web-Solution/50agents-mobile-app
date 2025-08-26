@@ -17,6 +17,7 @@ import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatAPI, Message, AgentDetails, ChatThread } from '../services/chatApi';
 import { chatStyles as styles } from '../styles/ChatScreen.styles';
+import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -360,9 +361,9 @@ const ChatScreen = () => {
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <View style={styles.headerInfo}>
-            <View style={styles.headerAvatar}>
+            <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(agentDetails?.name || agentName) }]}>
               <Text style={styles.headerInitial}>
-                {agentDetails?.name ? agentDetails.name.substring(0, 2).toUpperCase() : 'AI'}
+                {getAvatarInitials(agentDetails?.name || agentName)}
               </Text>
             </View>
             <Text style={styles.headerTitle}>

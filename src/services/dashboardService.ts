@@ -1,4 +1,5 @@
 import api from '../api/axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Agent interface
 export interface Agent {
@@ -110,19 +111,23 @@ export class DashboardService {
   }
 
   /**
-   * Process agents into "My Assistant" and custom agents
-   * Fixed logic to prevent name swapping issues
+   * Process agents to separate My Assistant from custom agents
+   * My Assistant is either named "AI Assistant" or matches current user's name
    */
-  static processAgents(allAgents: Agent[]): { myAssistant: Agent | null; customAgents: Agent[] } {
-    if (!allAgents || allAgents.length === 0) {
-      return { myAssistant: null, customAgents: [] };
-    }
+  static async processAgentsForDisplay(agents: Agent[]): Promise<{ myAssistant: Agent | null; customAgents: Agent[] }> {
+    const allAgents = [...agents];
+    
+    // Get current user name from storage
+    const userProfile = await AsyncStorage.getItem('userProfile');
+    const userData = userProfile ? JSON.parse(userProfile) : null;
+    const currentUserName = userData?.name || '';
     
     console.log('🔍 Processing agents, total count:', allAgents.length);
     console.log('📋 Agent names:', allAgents.map(agent => agent.name));
+    console.log('👤 Current user name:', currentUserName);
     
     // Look for existing "My Assistant" type agent
-    // Look for actual default AI assistant by exact name match
+    // Look for actual default AI assistant by exact name match or current user's name
     let myAssistant: Agent | null = null;
     const customAgents: Agent[] = [];
     
@@ -130,7 +135,8 @@ export class DashboardService {
     const existingAssistant = allAgents.find(agent => 
       agent.name.toLowerCase() === 'ai assistant' ||
       agent.name.toLowerCase() === 'my assistant' ||
-      agent.name.toLowerCase() === 'assistant'
+      agent.name.toLowerCase() === 'assistant' ||
+      (currentUserName && agent.name.toLowerCase() === currentUserName.toLowerCase()) // Dynamic user name match
     );
     
     if (existingAssistant) {

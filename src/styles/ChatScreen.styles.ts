@@ -221,7 +221,6 @@ export const chatStyles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2563eb',
     marginRight: 8,
   },
   headerInitial: {

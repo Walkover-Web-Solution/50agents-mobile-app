@@ -16,6 +16,7 @@ import { DashboardService, Agent } from '../services/dashboardService';
 // import DashboardService from '../services/dashboardService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dashboardStyles as styles } from '../styles/DashboardScreen.styles';
+import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 type DashboardRouteProp = RouteProp<RootStackParamList, 'Dashboard'>;
@@ -87,8 +88,8 @@ const DashboardScreen = () => {
       // Call service to switch org and fetch agents (combines switch-org + agents API calls)
       const allAgents = await DashboardService.switchOrgAndGetAgents(apiCompanyId, userId, targetOrgId);
       
-      // Process agents using service helper
-      const { myAssistant: processedMyAssistant, customAgents } = DashboardService.processAgents(allAgents);
+      // Process agents using service helper (now async)
+      const { myAssistant: processedMyAssistant, customAgents } = await DashboardService.processAgentsForDisplay(allAgents);
       
       // Filter agents based on organization ownership (now returns true for all orgs)
       const filteredAgents = DashboardService.filterAgentsByOrganization(customAgents, isOwnOrganization);
@@ -117,44 +118,20 @@ const DashboardScreen = () => {
     navigation.navigate('Chat', {
       agentId: agent._id,
       agentName: agent.name,
-      agentColor: getAgentColor(agent.name), // Pass the same color
+      agentColor: getAvatarColor(agent.name), // Pass the same color
     });
   };
 
   const filteredAgents = getFilteredAgents();
-
-  /**
-   * Generate consistent color for agent based on name
-   */
-  const getAgentColor = (name: string) => {
-    const colors = [
-      '#6366f1', // Purple
-      '#3b82f6', // Blue  
-      '#10b981', // Green
-      '#f59e0b', // Orange
-      '#ef4444', // Red
-      '#8b5cf6', // Violet
-      '#06b6d4', // Cyan
-      '#84cc16', // Lime
-    ];
-    
-    // Generate consistent hash from name
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-  };
 
   const renderAgent = ({ item }: { item: Agent }) => (
     <TouchableOpacity
       style={styles.agentItem}
       onPress={() => handleAgentPress(item)}
     >
-      <View style={[styles.agentAvatar, { backgroundColor: getAgentColor(item.name) }]}>
+      <View style={[styles.agentAvatar, { backgroundColor: getAvatarColor(item.name) }]}>
         <Text style={styles.agentInitial}>
-          {item.name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
+          {getAvatarInitials(item.name)}
         </Text>
       </View>
       <Text style={styles.agentName}>{item.name}</Text>
