@@ -45,74 +45,22 @@ const LoginScreen = () => {
       
       // 🚀 Console the initial JWT response structure
       console.log('🔑 Full OTP Response:', JSON.stringify(parsedData, null, 2));
-      console.log('🔑 JWT Token (message):', parsedData?.message);
       
-      // 🔍 Decode JWT token to see payload
-      if (parsedData?.message) {
-        try {
-          const jwtToken = parsedData.message;
-          
-          console.log('🔗 FULL JWT TOKEN:');
-          console.log(jwtToken);
+      
      
-          
-          const base64Payload = jwtToken.split('.')[1];
-          const decodedPayload = JSON.parse(atob(base64Payload));
-          
-          console.log('🚀 JWT Token Decoded:');
-          console.log('📄 Header:', JSON.parse(atob(jwtToken.split('.')[0])));
-          console.log('📝 Payload:', decodedPayload);
-          console.log('🔐 Signature:', jwtToken.split('.')[2]);
-          
-          console.log('🔍 Available Fields in JWT:');
-          Object.keys(decodedPayload).forEach(key => {
-            console.log(`   - ${key}: ${decodedPayload[key]}`);
-          });
-          
-        } catch (decodeError) {
-          console.error('❌ JWT Decode Error:', decodeError);
-        }
-      }
+     
       
-      // Check multiple possible response formats for MSG91 OTP
+      // Check MSG91 OTP response format
       let isSuccess = false;
       let token = null;
 
-      // Format 1: data.type === 'success' && data.message (MSG91 common format)
+      // MSG91 format: {type: "success", message: "jwt_token"}
       if (parsedData?.type?.toLowerCase() === 'success' && parsedData?.message) {
         isSuccess = true;
-        token = parsedData.message; // Extract only the JWT token
-        console.log('✅ Format 1: type=success, message found');
-      }
-      // Format 2: data.status === 'success' && data.message
-      else if (parsedData?.status?.toLowerCase() === 'success' && parsedData?.message) {
-        isSuccess = true;
-        token = parsedData.message;
-        console.log('✅ Format 2: status=success, message found');
-      }
-      // Format 3: data.status === 'success' && data.token
-      else if (parsedData?.status?.toLowerCase() === 'success' && parsedData?.token) {
-        isSuccess = true;
-        token = parsedData.token;
-        console.log('✅ Format 3: status=success, token found');
-      }
-      // Format 4: data.success === true && data.data?.token
-      else if (parsedData?.success === true && parsedData?.data?.token) {
-        isSuccess = true;
-        token = parsedData.data.token;
-        console.log('✅ Format 4: success=true, data.token found');
-      }
-      // Format 5: Direct token in parsedData (string response)
-      else if (typeof parsedData === 'string' && parsedData.length > 50) {
-        isSuccess = true;
-        token = parsedData;
-        console.log('✅ Format 5: Direct token string');
-      }
-      // Format 6: data.message exists (fallback)
-      else if (parsedData?.message && typeof parsedData.message === 'string') {
-        isSuccess = true;
-        token = parsedData.message;
-        console.log('✅ Format 6: Fallback message found');
+        token = parsedData.message; // Extract JWT token
+        console.log('✅ MSG91 OTP Success: JWT token extracted');
+      } else {
+        console.log('❌ MSG91 OTP Failed: Invalid response format');
       }
 
       console.log('🎯 OTP Validation Result:', { isSuccess, tokenExists: !!token });

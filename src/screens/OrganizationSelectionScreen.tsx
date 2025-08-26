@@ -149,7 +149,6 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
       {loading && organizations.length === 0 ? (
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={CONFIG.APP.ORGANIZATION_COLORS.arrowColor} />
-          <Text style={styles.loadingText}>Loading organizations...</Text>
         </View>
       ) : error ? (
         <View style={styles.centerContent}>
