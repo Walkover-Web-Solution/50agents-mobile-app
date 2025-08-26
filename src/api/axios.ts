@@ -68,6 +68,7 @@ api.interceptors.request.use(
       console.log('No proxy auth token found in storage');
     } else {
       console.log('Using dynamic token from storage');
+      console.log('proxy_auth_token:', token);
     }
     
     config.headers['proxy_auth_token'] = token;

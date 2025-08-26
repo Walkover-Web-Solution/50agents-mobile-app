@@ -96,28 +96,21 @@ const ChatScreen = () => {
 
   const switchToThread = async (thread: ChatThread) => {
     try {
-      console.log('🔄 Switching to thread:', thread.tid);
-      
       setCurrentThreadId(thread.tid);
       setShowThreadsList(false);
       
       // If thread already has messages, use them, otherwise load from server
       if (thread.messages && thread.messages.length > 0) {
-        console.log('✅ Using cached messages:', thread.messages.length);
         setMessages(thread.messages);
       } else {
-        console.log('📥 Loading messages from server for thread:', thread.tid);
         setMessages([]); // Clear current messages while loading
         
         // Load thread messages from server API
         if (agentDetails) {
           // Use serverId (MongoDB _id) for messages API, not tid (middleware_id)
           const messageThreadId = thread.serverId || thread.tid;
-          console.log('🔍 Using thread ID for messages API:', messageThreadId);
-          console.log('📝 Thread details:', { tid: thread.tid, serverId: thread.serverId });
           
           const loadedMessages = await ChatAPI.loadThreadHistory(messageThreadId, agentId, agentDetails);
-          console.log('✅ Loaded messages from server:', loadedMessages.length);
           setMessages(loadedMessages);
           
           // Update the thread in our local list with loaded messages
@@ -137,7 +130,6 @@ const ChatScreen = () => {
   };
 
   const createNewThread = () => {
-    console.log('🆕 Creating new thread');
     setCurrentThreadId(null);
     setMessages([]);
     setShowThreadsList(false);
@@ -162,7 +154,20 @@ const ChatScreen = () => {
     setMessages(updatedMessages);
 
     try {
-      const response = await ChatAPI.sendMessage(messageText, agentId, currentThreadId);
+      // For existing threads, find the serverId (MongoDB _id) to use for API calls
+      let threadIdForAPI = currentThreadId;
+      
+      if (currentThreadId) {
+        // Find the thread in allThreads to get serverId
+        const currentThread = allThreads.find(thread => thread.tid === currentThreadId);
+        if (currentThread && currentThread.serverId) {
+          threadIdForAPI = currentThread.serverId;
+        } else {
+          console.log('⚠️ No serverId found for thread, using tid:', currentThreadId);
+        }
+      }
+      
+      const response = await ChatAPI.sendMessage(messageText, agentId, threadIdForAPI);
       
       if (response.success) {
         // Phase 2: New thread creation (first message)
@@ -182,7 +187,6 @@ const ChatScreen = () => {
         // Update messages with agent response
         updatedMessages = [...updatedMessages, agentResponse];
         setMessages(updatedMessages);
-        console.log('🤖 Agent Response Added:', agentResponse.text);
         
         // Save thread data after successful message exchange
         const threadIdToSave = currentThreadId || response.threadId;
@@ -195,6 +199,7 @@ const ChatScreen = () => {
       }
       
     } catch (error: any) {
+      console.log('❌ Send Message Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         text: 'Sorry, I encountered an error. Please try again.',

@@ -37,20 +37,10 @@ export class ChatAPI {
   // Load agent configuration
   static async loadAgentConfig(agentId: string): Promise<AgentDetails | null> {
     try {
-      console.log('🚀 PHASE 1: Loading Agent Config...');
-      console.log('📋 Agent ID:', agentId);
-      
       const agentResponse = await api.get(`/proxy/870623/36jowpr17/agent/${agentId}`);
       
       if (agentResponse.data.success && agentResponse.data.data) {
         const details = agentResponse.data.data;
-        
-        console.log('✅ Agent Config Loaded:');
-        console.log('🤖 Name:', details.name);
-        console.log('🧠 LLM:', details.llm);
-        console.log('📝 Instructions:', details.instructions);
-        console.log('🌉 Bridge ID:', details.bridgeId);
-        console.log('🏢 Org ID:', details.orgId);
         
         return details;
       }
@@ -64,72 +54,48 @@ export class ChatAPI {
   // Load thread messages from server API
   static async loadThreadHistory(threadId: string, agentId: string, agentDetails: AgentDetails): Promise<Message[]> {
     try {
-      console.log('🔄 Loading Thread Messages for:', threadId);
-      console.log('🔍 ThreadId type:', typeof threadId, 'Length:', threadId?.length);
+      // Use same token method as sendMessage
+      const { getProxyAuthToken } = require('../utils/auth');
+      const token = await getProxyAuthToken();
       
-      const token = await AsyncStorage.getItem('proxy_auth_token');
       if (!token) {
-        console.log('❌ No proxy auth token found');
+        console.log('❌ No proxy auth token found in storage');
         return [];
       }
       
-      // Use the cleaner messages API endpoint
-      const messagesEndpoint = `https://routes.msg91.com/api/proxy/870623/36jowpr17/chat/message/${threadId}`;
-      console.log('🌐 Messages API Endpoint:', messagesEndpoint);
-      console.log('🔑 Using token:', token.substring(0, 20) + '...');
-    
-      const response = await fetch(messagesEndpoint, {
-        method: 'GET',
-        headers: {
-          'accept': '*/*',
-          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
-          'cache-control': 'no-cache',
-          'content-type': 'application/json',
-          'origin': 'https://chat.50agents.com',
-          'pragma': 'no-cache',
-          'priority': 'u=1, i',
-          'proxy_auth_token': token,
-          'referer': 'https://chat.50agents.com/',
-          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"macOS"',
-          'sec-fetch-dest': 'empty',
-          'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'cross-site',
-          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
-        }
-      });
+      const response = await api.get(`/proxy/870623/36jowpr17/chat/message/${threadId}`);
       
-      console.log('✅ Messages Response Status:', response.status);
-      
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('📨 Messages Response:', JSON.stringify(responseData, null, 2));
+      if (response.data.success && response.data.data?.messages) {
+        const serverMessages = response.data.data.messages;
         
-        if (responseData.success && responseData.data?.messages) {
-          const serverMessages = responseData.data.messages;
-          
-          // Convert server messages to app format
-          const loadedMessages: Message[] = serverMessages.map((msg: any, index: number) => ({
-            id: msg.id?.toString() || `msg_${index}`,
-            text: msg.content || '',
-            isUser: msg.role === 'user',
-            timestamp: new Date(msg.createdAt)
-          }));
-          
-          console.log('✅ Loaded messages count:', loadedMessages.length);
-          return loadedMessages;
-        } else {
-          console.log('⚠️ No messages in response or API error');
-          return [];
-        }
+        // Convert server messages to app format
+        const loadedMessages: Message[] = serverMessages.map((msg: any, index: number) => ({
+          id: msg.id?.toString() || `msg_${index}`,
+          text: msg.content || '',
+          isUser: msg.role === 'user',
+          timestamp: new Date(msg.createdAt)
+        }));
+        
+        return loadedMessages;
       } else {
-        console.log('❌ Messages API failed with status:', response.status);
+        console.log('❌ Invalid thread history response structure');
+        console.log('Response data:', response.data);
         return [];
       }
       
     } catch (error: any) {
-      console.log('❌ Error loading thread messages:', error);
+      console.log('❌ DETAILED THREAD HISTORY ERROR:');
+      console.log('Error message:', error.message);
+      console.log('Error response status:', error.response?.status);
+      console.log('Error response data:', JSON.stringify(error.response?.data, null, 2));
+      console.log('Full error object:', error);
+      
+      if (error.response?.status === 401) {
+        console.log('🔒 UNAUTHORIZED: Token expired for thread loading');
+      } else if (error.response?.status === 404) {
+        console.log('🔍 NOT FOUND: Thread not found');
+      }
+      
       return [];
     }
   }
@@ -137,9 +103,9 @@ export class ChatAPI {
   // Send message to chat API
   static async sendMessage(messageText: string, agentId: string, currentThreadId: string | null): Promise<{success: boolean, message: string, threadId?: string}> {
     try {
-      console.log('🚀 PHASE 2/4: Sending Message...');
-      console.log('📝 User Message:', messageText);
-      console.log('🧵 Current Thread ID:', currentThreadId);
+      // Check if we have a proxy auth token
+      const { getProxyAuthToken } = require('../utils/auth');
+      const token = await getProxyAuthToken();
       
       const chatEndpoint = currentThreadId 
         ? `/proxy/870623/36jowpr17/chat/message?tid=${currentThreadId}`
@@ -150,25 +116,13 @@ export class ChatAPI {
         agent: agentId,
       };
       
-      console.log('🌐 API Endpoint:', chatEndpoint);
-      console.log('📦 Payload:', chatPayload);
-      
       const response = await api.post(chatEndpoint, chatPayload);
-      
-      console.log('✅ API Response Status:', response.status);
-      console.log('📨 Full Response:', response.data);
       
       if (response.data.status === 'success' && response.data.data) {
         const responseData = response.data.data;
         
         if (!currentThreadId && responseData.tid) {
           console.log('🆕 NEW THREAD CREATED:', responseData.tid);
-        }
-        
-        if (responseData.message.includes('successfully sent') || 
-            responseData.message.includes('email has been') ||
-            responseData.message.includes('completed')) {
-          console.log('🔧 ACTION EXECUTED: Tool/Integration used');
         }
         
         return {
@@ -181,13 +135,26 @@ export class ChatAPI {
       }
       
     } catch (error: any) {
-      console.log('❌ CHAT ERROR:', error);
-      console.log('❌ Error Response:', error.response?.data);
-      
       if (error.response?.status === 429) {
-        console.log('⏳ RATE LIMITED: Too many requests');
+        return {
+          success: false,
+          message: 'Too many requests. Please wait a moment and try again.'
+        };
       } else if (error.response?.status === 400) {
-        console.log('🔑 AUTH ERROR: Token/config issue');
+        return {
+          success: false,
+          message: 'Authentication error. Please login again.'
+        };
+      } else if (error.response?.status === 401) {
+        return {
+          success: false,
+          message: 'Session expired. Please login again.'
+        };
+      } else if (error.response?.status === 404) {
+        return {
+          success: false,
+          message: 'Agent not found. Please try again.'
+        };
       }
       
       return {
@@ -198,16 +165,23 @@ export class ChatAPI {
   }
 
   // Save thread data to AsyncStorage
-  static async saveThreadData(threadId: string, messages: Message[], agentId: string): Promise<void> {
+  static async saveThreadData(threadId: string, messages: Message[], agentId?: string): Promise<void> {
     try {
-      const threadData: ChatThread = {
-        tid: threadId,
-        messages,
-        agentId,
-        createdAt: new Date(),
-      };
-      await AsyncStorage.setItem(`thread-${threadId}`, JSON.stringify(threadData));
-      console.log('✅ Thread data saved:', threadId);
+      // Save individual thread messages
+      const storageKey = `thread_messages_${threadId}`;
+      await AsyncStorage.setItem(storageKey, JSON.stringify(messages));
+      
+      // If agentId provided, update agent's thread list metadata
+      if (agentId) {
+        const agentThreadKey = `agent_thread_${agentId}`;
+        await AsyncStorage.setItem(agentThreadKey, JSON.stringify({
+          threadId,
+          agentId,
+          lastUpdated: new Date().toISOString(),
+          messageCount: messages.length
+        }));
+      }
+      
     } catch (error) {
       console.log('❌ Error saving thread data:', error);
     }
@@ -216,59 +190,20 @@ export class ChatAPI {
   // Load all threads for an agent from server API
   static async loadAllThreads(agentId: string): Promise<ChatThread[]> {
     try {
-      console.log('📂 Loading all threads from server for agent:', agentId);
+      // Use same token method as sendMessage
+      const { getProxyAuthToken } = require('../utils/auth');
+      const token = await getProxyAuthToken();
       
-      // Get proxy auth token
-      const token = await AsyncStorage.getItem('proxy_auth_token');
       if (!token) {
-        console.log('❌ No proxy auth token found');
         return [];
       }
-
-      // API credentials (stable values)
-      const companyId = '870623';
-      const userId = '36jowpr17';
       
-      // Construct API URL
-      const apiUrl = `https://routes.msg91.com/api/proxy/${companyId}/${userId}/thread/${agentId}`;
-      
-      console.log('🌐 Fetching threads from:', apiUrl);
-      
-      // Make API call with exact curl headers
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'accept': '*/*',
-          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
-          'cache-control': 'no-cache',
-          'content-type': 'application/json',
-          'origin': 'https://chat.50agents.com',
-          'pragma': 'no-cache',
-          'priority': 'u=1, i',
-          'proxy_auth_token': token,
-          'referer': 'https://chat.50agents.com/',
-          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-          'sec-ch-ua-mobile': '?0',
-          'sec-ch-ua-platform': '"macOS"',
-          'sec-fetch-dest': 'empty',
-          'sec-fetch-mode': 'cors',
-          'sec-fetch-site': 'cross-site',
-          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
-        }
-      });
-
-      if (!response.ok) {
-        console.log('❌ API response not ok:', response.status, response.statusText);
-        return [];
-      }
-
-      const result = await response.json();
-      console.log('📋 Server threads response:', JSON.stringify(result, null, 2));
+      // Use axios API for consistency with sendMessage
+      const response = await api.get(`/proxy/870623/36jowpr17/thread/${agentId}`);
 
       // Check if response is successful
-      if (result.status === 'success' && result.data?.threads) {
-        const serverThreads = result.data.threads;
-        console.log('✅ Loaded', serverThreads.length, 'threads from server');
+      if (response.data.status === 'success' && response.data.data?.threads) {
+        const serverThreads = response.data.data.threads;
         
         // Convert server threads to ChatThread format
         const chatThreads: ChatThread[] = serverThreads.map((serverThread: any) => ({
@@ -286,15 +221,11 @@ export class ChatAPI {
         
         return chatThreads;
       } else {
-        console.log('❌ API response format error:', result);
         return [];
       }
       
     } catch (error) {
-      console.log('❌ Error loading threads from server:', error);
-      
       // Fallback to local threads if API fails
-      console.log('🔄 Falling back to local threads...');
       return await this.loadLocalThreads(agentId);
     }
   }
@@ -302,8 +233,6 @@ export class ChatAPI {
   // Fallback: Load local threads (previous implementation)
   private static async loadLocalThreads(agentId: string): Promise<ChatThread[]> {
     try {
-      console.log('📂 Loading local threads for agent:', agentId);
-      
       const allKeys = await AsyncStorage.getAllKeys();
       const threadKeys = allKeys.filter(key => key.startsWith(`thread_messages_`));
       
@@ -342,7 +271,6 @@ export class ChatAPI {
       }
       
       threads.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      console.log('📋 Loaded', threads.length, 'local threads for agent');
       
       return threads;
     } catch (error) {

@@ -129,7 +129,7 @@ export class OrganizationService {
 
       if (response.status === 200) {
         const data: SwitchOrgApiResponse = response.data;
-        console.log(' [Service] Switch-org API successful:', JSON.stringify(data, null, 2));
+      
         
         // Save important data from response
         if (data?.data?.orgAgentMap) {

@@ -113,12 +113,7 @@ export const getProxyAuthToken = async (): Promise<string | null> => {
   try {
     const token = await AsyncStorage.getItem(PROXY_AUTH_TOKEN_KEY);
     
-    if (token) {
-      console.log('✅ Proxy auth token retrieved from storage');
-      console.log('🔑 Retrieved Token:', token);
-    } else {
-      console.log('⚠️ No proxy auth token found in storage');
-    }
+    
     
     return token;
   } catch (error) {
