@@ -139,17 +139,7 @@ const DashboardScreen = () => {
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color="#1a73e8" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-          <Text style={styles.loadingSubText}>Switching organization...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  
 
   return (
     <SafeAreaView style={styles.container}>
