@@ -7,15 +7,10 @@ export const dashboardStyles = StyleSheet.create({
     paddingTop: 50,
   },
   loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    zIndex: 1000,
   },
   loadingContent: {
     justifyContent: 'center',
@@ -23,7 +18,7 @@ export const dashboardStyles = StyleSheet.create({
   },
   loadingText: {
     color: '#fff',
-    marginTop: 10,
+    marginTop: 16,
     fontSize: 16,
   },
   loadingSubText: {

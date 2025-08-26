@@ -326,11 +326,6 @@ const ChatScreen = () => {
       <Text style={styles.welcomeSubtitle}>
         {agentDetails?.instructions || 'Your intelligent assistant for productivity and creativity'}
       </Text>
-      {agentDetails?.llm && (
-        <Text style={styles.modelInfo}>
-          Powered by {agentDetails.llm.service} {agentDetails.llm.model}
-        </Text>
-      )}
     </View>
   );
 
@@ -423,7 +418,7 @@ const ChatScreen = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.inputHint}>
-            {currentThreadId ? `Thread: ${currentThreadId.substring(0, 8)}...` : 'Press Shift+Enter for a new line'}
+            {currentThreadId ? `Thread: ${currentThreadId.substring(0, 8)}...` : ''}
           </Text>
         </View>
       </KeyboardAvoidingView>

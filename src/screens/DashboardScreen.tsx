@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -140,18 +141,18 @@ const DashboardScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color="#1a73e8" />
           <Text style={styles.loadingText}>Loading dashboard...</Text>
           <Text style={styles.loadingSubText}>Switching organization...</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity 
@@ -174,7 +175,7 @@ const DashboardScreen = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search agents... (Cmd+K)"
+          placeholder="Search agents..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#666"
@@ -194,7 +195,7 @@ const DashboardScreen = () => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

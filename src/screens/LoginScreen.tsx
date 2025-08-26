@@ -140,8 +140,8 @@ const LoginScreen = () => {
         if (!proxyToken) {
           console.log('❌ Failed to generate proxy auth token');
           Alert.alert(
-            'Login Failed', 
-            'Unable to generate authentication token. Please try again.',
+            'Registration Required', 
+            'Please register first on web before login in app',
             [
               {
                 text: 'OK',
