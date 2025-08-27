@@ -93,6 +93,10 @@ export const chatStyles = StyleSheet.create({
   userMessageText: {
     fontSize: 16,
     color: '#ffffff',
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+    }),
   },
   agentMessageWrapper: {
     flexDirection: 'column',
@@ -135,6 +139,10 @@ export const chatStyles = StyleSheet.create({
   agentMessageText: {
     fontSize: 16,
     color: '#ffffff',
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+    }),
   },
   inputContainer: {
     paddingHorizontal: 8,
@@ -158,6 +166,10 @@ export const chatStyles = StyleSheet.create({
     lineHeight: 22,
     maxHeight: 120,
     paddingVertical: 0,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+    }),
   },
   sendButton: {
     width: 32,
@@ -348,5 +360,47 @@ export const chatStyles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginTop: 8,
+  },
+  codeBlock: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2563eb',
+    // Cross-platform shadow
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  codeLanguage: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    // Platform-specific font
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+    }),
+  },
+  codeText: {
+    fontSize: 14,
+    color: '#e5e7eb',
+    lineHeight: 20,
+    // Cross-platform monospace font
+    fontFamily: Platform.select({
+      ios: 'Courier New',
+      android: 'monospace',
+    }),
   },
 });

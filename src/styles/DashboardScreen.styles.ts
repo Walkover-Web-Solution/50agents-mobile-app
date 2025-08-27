@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export const dashboardStyles = StyleSheet.create({
   container: {
@@ -119,5 +119,18 @@ export const dashboardStyles = StyleSheet.create({
   emptyText: {
     color: '#888',
     fontSize: 16,
+  },
+  dropdown: {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
 });

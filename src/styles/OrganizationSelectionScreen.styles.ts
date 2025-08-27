@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { CONFIG } from '../config';
 
 export const organizationStyles = StyleSheet.create({
@@ -7,26 +7,27 @@ export const organizationStyles = StyleSheet.create({
     backgroundColor: CONFIG.APP.ORGANIZATION_COLORS.backgroundColor, 
   },
   header: {
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40, 
     paddingBottom: 40,
     paddingHorizontal: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: Platform.OS === 'ios' ? '700' : 'bold', 
     color: CONFIG.APP.ORGANIZATION_COLORS.titleColor, 
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
+    fontWeight: Platform.OS === 'ios' ? '400' : 'normal',
     color: CONFIG.APP.ORGANIZATION_COLORS.subtitleColor, 
     textAlign: 'center',
   },
   listContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20, 
   },
   listContent: {
     flexGrow: 1,
@@ -39,14 +40,17 @@ export const organizationStyles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
   },
   orgDetails: {
     flex: 1,
