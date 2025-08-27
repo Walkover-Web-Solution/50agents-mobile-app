@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TextInput,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { OTPVerification } from '@msg91comm/react-native-sendotp';
 import { useNavigation } from '@react-navigation/native';
@@ -154,6 +155,7 @@ const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar />
       <Text style={styles.title}>Welcome to 50Agents</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 

@@ -7,6 +7,7 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -143,6 +144,11 @@ const DashboardScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#1a1a1a" 
+        translucent={false} 
+      />
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity 

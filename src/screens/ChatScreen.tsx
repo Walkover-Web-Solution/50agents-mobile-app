@@ -5,11 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatAPI, Message, AgentDetails, ChatThread } from '../services/chatApi';
 import { chatStyles as styles } from '../styles/ChatScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -36,6 +37,7 @@ const ChatScreen = () => {
   const [showThreadsList, setShowThreadsList] = useState(false);
   const [allThreads, setAllThreads] = useState<ChatThread[]>([]);
   
+  const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
 
   // Phase 1: Agent Config Loading (UI Bootstrap)
@@ -341,24 +343,31 @@ const ChatScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6b7280" />
           <Text style={styles.loadingText}>Loading agent configuration...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#1f2937" 
+        translucent={true} 
+      />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { 
+          paddingTop: Platform.OS === 'android' ? insets.top + 14 : 14 
+        }]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -439,7 +448,7 @@ const ChatScreen = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowThreadsList(false)}
       >
-        <SafeAreaView style={styles.threadsModal}>
+        <View style={styles.threadsModal}>
           {/* Threads Modal Header */}
           <View style={styles.threadsHeader}>
             <Text style={styles.threadsTitle}>Chat History</Text>
@@ -507,9 +516,9 @@ const ChatScreen = () => {
               </View>
             )}
           />
-        </SafeAreaView>
+        </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

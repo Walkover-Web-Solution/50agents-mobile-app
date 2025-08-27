@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken, saveOrgId, logout } from '../utils/auth';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -141,6 +141,11 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#1a1a1a" 
+        translucent={false} 
+      />
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to {CONFIG.APP.APP_NAME}</Text>
         <Text style={styles.subtitle}>Select your organization to continue</Text>
