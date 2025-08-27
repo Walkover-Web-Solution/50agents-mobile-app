@@ -7,4 +7,9 @@
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">chat.50agents.com</domain>
     </domain-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
 </network-security-config>
