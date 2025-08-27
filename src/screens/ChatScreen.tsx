@@ -11,6 +11,10 @@ import {
   Modal,
   StatusBar,
   Keyboard,
+  PanResponder,
+  Animated,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import {
   useNavigation, useRoute, RouteProp
@@ -395,6 +399,109 @@ const ChatScreen = () => {
 
   const displayName = formatName(agentDetails?.name || agentName);
 
+  const renderThreadItem = ({ item }: { item: ChatThread }) => {
+    const translateX = new Animated.Value(0);
+    
+    const threadPanResponder = PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 50;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (Math.abs(gestureState.dx) > 20) {
+          translateX.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (Math.abs(gestureState.dx) > 100) {
+          // Show delete confirmation
+          deleteThread(item.tid, item.threadName || item.messages[0]?.text?.substring(0, 30) || 'New conversation');
+          // Reset position
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          // Snap back to original position
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    });
+
+    return (
+      <Animated.View 
+        style={[
+          styles.threadItemContainer,
+          { transform: [{ translateX }] }
+        ]}
+        {...threadPanResponder.panHandlers}
+      >
+        <TouchableOpacity 
+          style={[
+            styles.threadItem,
+            currentThreadId === item.tid && styles.activeThreadItem
+          ]}
+          onPress={() => switchToThread(item)}
+        >
+          <View style={styles.threadInfo}>
+            <Text style={styles.threadTitle}>
+              {item.threadName 
+                ? item.threadName
+                : item.messages.length > 0 
+                  ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
+                  : 'New conversation'
+              }
+            </Text>
+            <Text style={styles.threadDate}>
+              {item.createdAt.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+          </View>
+          <View style={styles.threadMeta}>
+            {currentThreadId === item.tid && (
+              <View style={styles.activeIndicator} />
+            )}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const deleteThread = (threadId: string, threadName: string) => {
+    Alert.alert(
+      'Delete Thread',
+      `Are you sure you want to delete the thread "${threadName}"?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              await ChatAPI.deleteThread(threadId);
+              const updatedThreads = allThreads.filter(thread => thread.tid !== threadId);
+              setAllThreads(updatedThreads);
+              if (currentThreadId === threadId) {
+                setCurrentThreadId(null);
+                setMessages([]);
+              }
+            } catch (error) {
+              console.log('❌ Error deleting thread:', error);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -495,9 +602,6 @@ const ChatScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-          <Text style={styles.inputHint}>
-            {currentThreadId ? `Thread: ${currentThreadId.substring(0, 8)}...` : ''}
-          </Text>
         </View>
       </KeyboardAvoidingView>
 
@@ -519,55 +623,13 @@ const ChatScreen = () => {
             </TouchableOpacity>
           </View>
           
-          {/* New Thread Button */}
-          <TouchableOpacity 
-            style={styles.newThreadButton}
-            onPress={createNewThread}
-          >
-            <Text style={styles.newThreadIcon}>+</Text>
-            <Text style={styles.newThreadText}>New Conversation</Text>
-          </TouchableOpacity>
-          
           {/* Threads List */}
           <FlatList
             data={allThreads}
             keyExtractor={(item) => item.tid}
             style={styles.threadsList}
             contentContainerStyle={styles.threadsContainer}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={[
-                  styles.threadItem,
-                  currentThreadId === item.tid && styles.activeThreadItem
-                ]}
-                onPress={() => switchToThread(item)}
-              >
-                <View style={styles.threadInfo}>
-                  <Text style={styles.threadTitle}>
-                    {item.threadName 
-                      ? item.threadName
-                      : item.messages.length > 0 
-                        ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
-                        : 'New conversation'
-                    }
-                  </Text>
-                  <Text style={styles.threadDate}>
-                    {item.createdAt.toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </Text>
-                </View>
-                <View style={styles.threadMeta}>
-                  <Text style={styles.messageCount}>{item.messages.length}</Text>
-                  {currentThreadId === item.tid && (
-                    <View style={styles.activeIndicator} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            )}
+            renderItem={renderThreadItem}
             ListEmptyComponent={() => (
               <View style={styles.emptyThreads}>
                 <Text style={styles.emptyText}>No previous conversations</Text>
@@ -575,6 +637,15 @@ const ChatScreen = () => {
               </View>
             )}
           />
+          
+          {/* New Thread Button - Moved to bottom */}
+          <TouchableOpacity 
+            style={styles.newThreadButton}
+            onPress={createNewThread}
+          >
+            <Text style={styles.newThreadIcon}>+</Text>
+            <Text style={styles.newThreadText}>New Conversation</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </View>

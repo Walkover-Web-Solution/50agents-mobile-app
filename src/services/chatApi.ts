@@ -278,4 +278,15 @@ export class ChatAPI {
       return [];
     }
   }
+
+  // Delete a thread
+  static async deleteThread(threadId: string): Promise<boolean> {
+    try {
+      const response = await api.delete(`/proxy/870623/36jowpr17/thread/${threadId}`);
+      return response.status === 200;
+    } catch (error) {
+      console.log('❌ Delete Thread Error:', error);
+      return false;
+    }
+  }
 }
