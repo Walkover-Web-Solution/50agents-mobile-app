@@ -180,9 +180,11 @@ const DashboardScreen = () => {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No agents found</Text>
-          </View>
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No agents found</Text>
+            </View>
+          ) : null
         }
       />
     </SafeAreaView>
