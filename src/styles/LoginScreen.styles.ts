@@ -6,17 +6,17 @@ export const loginStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#1f2937', // Dark theme consistent with app
+    backgroundColor: '#ffffff', // White background
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#ffffff', // White text for dark theme
+    color: '#1f2937', // Dark text for white background
   },
   subtitle: {
     fontSize: 16,
-    color: '#9ca3af', // Gray text for dark theme
+    color: '#6b7280', // Gray text for white background
     marginBottom: 40,
     textAlign: 'center',
   },
@@ -24,13 +24,13 @@ export const loginStyles = StyleSheet.create({
     width: '100%',
     maxWidth: 300,
     height: 50, // Increased for better touch target
-    borderColor: '#374151',
+    borderColor: '#d1d5db',
     borderWidth: 1,
     borderRadius: 8,
     padding: 15,
     marginBottom: 20,
-    backgroundColor: '#374151',
-    color: '#ffffff',
+    backgroundColor: '#f9fafb',
+    color: '#1f2937',
     fontSize: 16,
   },
   loginButton: {

@@ -146,8 +146,8 @@ export const chatStyles = StyleSheet.create({
   },
   inputContainer: {
     paddingHorizontal: 8,
-    paddingTop: 24,
-    paddingBottom: Platform.OS === 'ios' ? 50 : 40,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 12 : 8,
     backgroundColor: '#212121',
   },
   inputWrapper: {
@@ -158,6 +158,7 @@ export const chatStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 4,
+    minHeight: 48,
   },
   textInput: {
     flex: 1,
@@ -207,9 +208,9 @@ export const chatStyles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     ...Platform.select({
       ios: {
         paddingTop: 14,
@@ -236,17 +237,18 @@ export const chatStyles = StyleSheet.create({
     }),
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 22,
-    backgroundColor: 'rgba(107, 114, 128, 0.1)',
+    borderRadius: 20,
+    marginLeft: 4,
   },
   backArrow: {
-    fontSize: 20,
-    color: '#f9fafb',
-    fontWeight: '400',
+    fontSize: 24,
+    color: '#ffffff',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   headerInfo: {
     flex: 1,

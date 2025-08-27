@@ -155,7 +155,7 @@ const LoginScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar />
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       <Text style={styles.title}>Welcome to 50Agents</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 

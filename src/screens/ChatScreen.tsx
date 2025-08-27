@@ -10,8 +10,11 @@ import {
   ActivityIndicator,
   Modal,
   StatusBar,
+  Keyboard,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import {
+  useNavigation, useRoute, RouteProp
+} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +22,7 @@ import { ChatAPI, Message, AgentDetails, ChatThread } from '../services/chatApi'
 import { chatStyles as styles } from '../styles/ChatScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getUserEmail } from '../utils/auth';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -36,6 +40,7 @@ const ChatScreen = () => {
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(threadId || null);
   const [showThreadsList, setShowThreadsList] = useState(false);
   const [allThreads, setAllThreads] = useState<ChatThread[]>([]);
+  const [userInitials, setUserInitials] = useState<string>('U');
   
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
@@ -43,6 +48,7 @@ const ChatScreen = () => {
   // Phase 1: Agent Config Loading (UI Bootstrap)
   useEffect(() => {
     loadAgentConfig();
+    loadUserInitials();
     if (threadId) {
       loadThreadHistory(threadId);
     }
@@ -59,6 +65,54 @@ const ChatScreen = () => {
       console.log('❌ Agent Config Load Error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserInitials = async () => {
+    try {
+      const email = await getUserEmail();
+      console.log('📧 User email for initials:', email);
+      
+      if (email) {
+        // Extract name from email (before @)
+        const namePart = email.split('@')[0];
+        console.log('👤 Name part:', namePart);
+        
+        // For emails like "kartikshrivastav2004@gmail.com"
+        // Remove numbers and extract meaningful name parts
+        const cleanName = namePart.replace(/\d+/g, ''); // Remove numbers
+        console.log('🧹 Clean name:', cleanName);
+        
+        // Try different splitting strategies
+        let initials = '';
+        
+        // Strategy 1: Split by common separators
+        const words = cleanName.split(/[._-]/);
+        if (words.length >= 2 && words[0].length > 0 && words[1].length > 0) {
+          initials = words[0].charAt(0).toUpperCase() + words[1].charAt(0).toUpperCase();
+        }
+        // Strategy 2: For concatenated names like "kartikshrivastav"
+        else if (cleanName.length >= 6) {
+          // Split at 40% to catch end of first name
+          // "kartikshrivastav" → split at position 6 → "kartik|shrivastav" → "K" + "S"
+          const splitPoint = Math.floor(cleanName.length * 0.4);
+          
+          const firstInitial = cleanName.charAt(0).toUpperCase();
+          const secondInitial = cleanName.charAt(splitPoint).toUpperCase();
+          
+          initials = firstInitial + secondInitial;
+        }
+        // Strategy 3: Fallback to first 2 characters
+        else {
+          initials = cleanName.substring(0, 2).toUpperCase();
+        }
+        
+        console.log('✅ Generated initials:', initials);
+        setUserInitials(initials);
+      }
+    } catch (error) {
+      console.log('❌ Error loading user initials:', error);
+      setUserInitials('U'); // Fallback
     }
   };
 
@@ -264,9 +318,9 @@ const ChatScreen = () => {
       });
     };
 
-    // Generate user initials (e.g., "KS" for Kartik Shrivastav)
+    // Generate user initials dynamically from saved email
     const getUserInitials = () => {
-      return 'KS'; // You can make this dynamic based on user data
+      return userInitials;
     };
 
     // Generate agent initials from agent name
@@ -362,7 +416,7 @@ const ChatScreen = () => {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -10 : -20}
       >
         {/* Header */}
         <View style={[styles.header, { 
@@ -406,6 +460,11 @@ const ChatScreen = () => {
             contentContainerStyle={styles.messagesContainer}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => {
+              if (flatListRef.current && messages.length > 0) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
+            }}
           />
         )}
 

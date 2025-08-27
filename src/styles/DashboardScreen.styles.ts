@@ -43,14 +43,18 @@ export const dashboardStyles = StyleSheet.create({
     marginLeft: 15,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 20,
-    backgroundColor: '#2a2a2a',
+    marginLeft: 4,
   },
   backArrow: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 24,
+    color: '#ffffff',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,

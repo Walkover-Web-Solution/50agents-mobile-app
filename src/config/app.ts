@@ -8,14 +8,11 @@ export const APP_CONFIG = {
   APP_NAME: '50Agents',
   APP_VERSION: '1.0.0',
   
-  // User Management
-  REGISTERED_USERS: [
-    'kartikshrivastav2004@gmail.com'
-  ],
+  
   
   // Default Values
   DEFAULTS: {
-    USER_EMAIL: 'kartikshrivastav2004@gmail.com',
+   
     USER_ID: '1', // TODO: Make dynamic based on logged-in user
     REFERENCE_ID: '870623b1736406370677f756255301',
     WIDGET_ID: '35686b68546b393235393432',
