@@ -8,6 +8,7 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { OTPVerification } from '@msg91comm/react-native-sendotp';
 import { useNavigation } from '@react-navigation/native';
@@ -169,7 +170,14 @@ const LoginScreen = () => {
         {isLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Login with OTP</Text>
+          <View style={styles.buttonContent}>
+            <Image 
+              source={require('../image/msg91.png')} 
+              style={styles.buttonIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.buttonText}>Login With OTP</Text>
+          </View>
         )}
       </TouchableOpacity>
 
