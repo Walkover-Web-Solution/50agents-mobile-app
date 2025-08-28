@@ -42,6 +42,18 @@ export const dashboardStyles = StyleSheet.create({
     flex: 1,
     marginLeft: 15,
   },
+  dropdownButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  dropdownArrow: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -125,6 +137,13 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 16,
   },
   dropdown: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    backgroundColor: '#232323',
+    borderRadius: 8,
+    minWidth: 160,
+    zIndex: 1000,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -136,5 +155,91 @@ export const dashboardStyles = StyleSheet.create({
         elevation: 5,
       },
     }),
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  dropdownItemIcon: {
+    fontSize: 18,
+    color: '#fff',
+    marginRight: 10,
+  },
+  dropdownItemText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#232323',
+    borderRadius: 12,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalInput: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  modalErrorText: {
+    color: '#ff6b6b',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+  },
+  modalCancelButton: {
+    backgroundColor: '#3a3a3a',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  modalCreateButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

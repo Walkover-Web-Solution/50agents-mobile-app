@@ -104,6 +104,23 @@ export class OrganizationService {
   }
 
   /**
+   * Create a new organization
+   */
+  static async createOrganization(name: string): Promise<any> {
+    try {
+      console.log(' [Service] Creating organization:', name);
+      const response = await api.post('/c/createCompany', {
+        company: { name },
+      });
+      console.log(' [Service] Create organization response status:', response.status);
+      return response.data;
+    } catch (error: any) {
+      console.error(' [Service] Create organization error:', error?.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Switch to a specific organization
    * Calls the switch-org API and saves orgAgentMap data
    */

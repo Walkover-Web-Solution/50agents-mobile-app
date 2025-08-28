@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getToken, saveOrgId, logout } from '../utils/auth';
+import { saveOrgId } from '../utils/auth';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import OrganizationService from '../services/organizationService';
@@ -94,40 +94,6 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleLogout = async (): Promise<void> => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await logout();
-              
-              // Navigate back to login screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }]
-              });
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -197,17 +163,6 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
       )}
-      
-      {/* Logout Button at Bottom */}
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          disabled={loading}
-        >
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
