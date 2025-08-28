@@ -45,6 +45,7 @@ const ChatScreen = () => {
   const [showThreadsList, setShowThreadsList] = useState(false);
   const [allThreads, setAllThreads] = useState<ChatThread[]>([]);
   const [userInitials, setUserInitials] = useState<string>('U');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
@@ -556,40 +557,41 @@ const ChatScreen = () => {
         backgroundColor="#1f2937" 
         translucent={true} 
       />
-      <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.flex}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? -10 : 0}
-      >
-        {/* Header */}
-        <View style={[styles.header, { 
-          paddingTop: Platform.OS === 'android' ? insets.top + 14 : 14 
-        }]}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>
-              <Text style={styles.headerInitial}>
-                {getAvatarInitials(displayName)}
-              </Text>
-            </View>
-            <Text style={styles.headerTitle}>
-              {displayName}
+      
+      {/* Header */}
+      <View style={[styles.header, { 
+        paddingTop: Platform.OS === 'android' ? insets.top + 14 : 14 
+      }]}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerInfo}>
+          <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>
+            <Text style={styles.headerInitial}>
+              {getAvatarInitials(displayName)}
             </Text>
           </View>
-          <View style={styles.headerSpacer} />
-          <TouchableOpacity 
-            style={styles.threadsButton}
-            onPress={() => setShowThreadsList(true)}
-          >
-            <Text style={styles.threadsIcon}>≡</Text>
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {displayName}
+          </Text>
         </View>
+        <View style={styles.headerSpacer} />
+        <TouchableOpacity 
+          style={styles.threadsButton}
+          onPress={() => setShowThreadsList(true)}
+        >
+          <Text style={styles.threadsIcon}>≡</Text>
+        </TouchableOpacity>
+      </View>
 
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 45 : 0}
+      >
         {/* Messages or Welcome Screen */}
         {messages.length === 0 ? (
           renderWelcomeScreen()
@@ -612,7 +614,7 @@ const ChatScreen = () => {
         )}
 
         {/* Input Container */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.textInput}

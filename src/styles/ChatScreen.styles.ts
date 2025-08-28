@@ -145,9 +145,9 @@ export const chatStyles = StyleSheet.create({
     }),
   },
   inputContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 16,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 0,
     backgroundColor: '#212121',
   },
   inputWrapper: {
@@ -156,10 +156,10 @@ export const chatStyles = StyleSheet.create({
     backgroundColor: '#374151',
     borderRadius: 24,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 8,
-    minHeight: 52,
-    marginHorizontal: 4,
+    paddingVertical: 12,
+    marginBottom: 0,
+    minHeight: 48,
+    marginHorizontal: 0,
   },
   textInput: {
     flex: 1,
