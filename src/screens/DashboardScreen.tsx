@@ -46,6 +46,12 @@ const DashboardScreen = () => {
   const [orgName, setOrgName] = useState('');
   const [creatingOrg, setCreatingOrg] = useState(false);
   const [createOrgError, setCreateOrgError] = useState<string | null>(null);
+  const [membersModalVisible, setMembersModalVisible] = useState(false);
+  const [memberEmail, setMemberEmail] = useState('');
+  const [invitingMember, setInvitingMember] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [inviteResults, setInviteResults] = useState<{ name: string; email: string }[]>([]);
 
   // Check if this is user's own organization (with null safety)
   const isOwnOrganization = DashboardService.isUserOwnOrganization(companyName || '');
@@ -91,9 +97,7 @@ const DashboardScreen = () => {
       const userId = '36jowpr17'; // Main user ID for API URL (stable)
       const targetOrgId = organizationId; // This goes in request body as orgId parameter
 
-      console.log(' [UI] Loading dashboard data for Organization:', organizationId);
-      console.log(' [UI] Using API credentials - Company:', apiCompanyId, 'User:', userId);
-      console.log(' [UI] Target organization ID for switch:', targetOrgId);
+      
       if (orgAgentMap) {
         console.log(' [UI] Available orgAgentMap:', orgAgentMap);
       }
@@ -171,6 +175,59 @@ const DashboardScreen = () => {
     }
   };
 
+  const normalizeInviteResults = (res: any): { name: string; email: string }[] => {
+    try {
+      const candidates: any[] = [];
+      if (Array.isArray(res)) candidates.push(...res);
+      if (Array.isArray(res?.data)) candidates.push(...res.data);
+      if (Array.isArray(res?.data?.users)) candidates.push(...res.data.users);
+      if (Array.isArray(res?.data?.results)) candidates.push(...res.data.results);
+      if (Array.isArray(res?.users)) candidates.push(...res.users);
+      if (Array.isArray(res?.results)) candidates.push(...res.results);
+      if (res?.user && typeof res.user === 'object') candidates.push(res.user);
+      if (res?.data?.user && typeof res.data.user === 'object') candidates.push(res.data.user);
+      if (res?.data && typeof res.data === 'object' && (res.data.email || res.data.mail || res.data.primaryEmail)) candidates.push(res.data);
+
+      const seen = new Set<string>();
+      const out: { name: string; email: string }[] = [];
+      for (const u of candidates) {
+        const name = String(u?.name || u?.fullName || u?.username || u?.displayName || '').trim();
+        const email = String(u?.email || u?.mail || u?.primaryEmail || '').trim();
+        if (email && !seen.has(email)) {
+          out.push({ name: name || email, email });
+          seen.add(email);
+        }
+      }
+      return out;
+    } catch {
+      return [];
+    }
+  };
+
+  const handleInviteMemberSubmit = async () => {
+    const email = memberEmail.trim();
+    if (!email) {
+      setInviteError('Please enter an email');
+      return;
+    }
+    try {
+      setInvitingMember(true);
+      setInviteError(null);
+      setInviteSuccess(null);
+      const res = await OrganizationService.inviteUserByEmail(email);
+      console.log(' [UI] inviteUserByEmail response:', JSON.stringify(res));
+      const results = normalizeInviteResults(res);
+      const list = results.length ? results : [{ name: email, email }];
+      setInviteResults(list);
+      setInviteSuccess(results.length ? 'Found matching users.' : 'Invite sent successfully.');
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to invite/search';
+      setInviteError(typeof msg === 'string' ? msg : 'Failed to invite/search');
+    } finally {
+      setInvitingMember(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -199,7 +256,11 @@ const DashboardScreen = () => {
           <View style={styles.dropdown}>
             <TouchableOpacity style={styles.dropdownItem} onPress={() => {
               setDropdownVisible(false);
-              // Handle Members option
+              setInviteError(null);
+              setInviteSuccess(null);
+              setMemberEmail('');
+              setInviteResults([]);
+              setMembersModalVisible(true);
             }}>
               <Text style={styles.dropdownItemIcon}>👥</Text>
               <Text style={styles.dropdownItemText}>Members</Text>
@@ -318,6 +379,84 @@ const DashboardScreen = () => {
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={styles.modalButtonText}>Create</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      {/* Members Modal */}
+      <Modal
+        visible={membersModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setMembersModalVisible(false);
+          setMemberEmail('');
+          setInviteError(null);
+          setInviteSuccess(null);
+          setInviteResults([]);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Members</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Invite or Search by email"
+              placeholderTextColor="#666"
+              value={memberEmail}
+              onChangeText={(t) => {
+                setMemberEmail(t);
+                if (inviteError) setInviteError(null);
+                if (inviteSuccess) setInviteSuccess(null);
+                if (inviteResults.length) setInviteResults([]);
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="search"
+              onSubmitEditing={handleInviteMemberSubmit}
+              autoFocus
+            />
+            {inviteError ? (
+              <Text style={styles.modalErrorText}>{inviteError}</Text>
+            ) : null}
+            {inviteSuccess ? (
+              <Text style={[styles.modalErrorText, { color: '#4ade80' }]}>{inviteSuccess}</Text>
+            ) : null}
+            {inviteResults.length > 0 && (
+              <View style={styles.memberList}>
+                {inviteResults.map((u, idx) => (
+                  <View key={`${u.email}-${idx}`} style={styles.memberRow}>
+                    <Text style={styles.memberName}>{u.name}</Text>
+                    <Text style={styles.memberEmail}>{u.email}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setMembersModalVisible(false);
+                  setMemberEmail('');
+                  setInviteError(null);
+                  setInviteSuccess(null);
+                  setInviteResults([]);
+                }}
+                disabled={invitingMember}
+              >
+                <Text style={styles.modalButtonText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalCreateButton}
+                onPress={handleInviteMemberSubmit}
+                disabled={invitingMember}
+              >
+                {invitingMember ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Invite</Text>
                 )}
               </TouchableOpacity>
             </View>

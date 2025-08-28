@@ -109,13 +109,68 @@ export class OrganizationService {
   static async createOrganization(name: string): Promise<any> {
     try {
       console.log(' [Service] Creating organization:', name);
-      const response = await api.post('/c/createCompany', {
-        company: { name },
-      });
+
+      // Build validated payload
+      const payload = this.buildCreateCompanyPayload(name);
+
+      const response = await api.post('/c/createCompany', payload);
       console.log(' [Service] Create organization response status:', response.status);
       return response.data;
     } catch (error: any) {
       console.error(' [Service] Create organization error:', error?.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper: Build payload for createCompany with validation + slug
+   */
+  private static buildCreateCompanyPayload(rawName: string) {
+    // Trim and collapse spaces
+    const trimmed = (rawName || '').trim().replace(/\s+/g, ' ');
+
+    // Basic format: allow letters, numbers, spaces and common symbols . & ' _ -
+    const cleanedName = trimmed.replace(/[^A-Za-z0-9 .&'_-]/g, '');
+
+    // Enforce length 3..50
+    if (cleanedName.length < 3 || cleanedName.length > 50) {
+      throw new Error('Organization name must be 3-50 characters.');
+    }
+
+    // Disallow names that start with a non alphanumeric
+    if (!/^[A-Za-z0-9]/.test(cleanedName)) {
+      throw new Error('Organization name must start with a letter or number.');
+    }
+
+    // Build slug for company_uname: lowercase, replace non-alnum with hyphen, trim hyphens
+    const company_uname = cleanedName
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 50);
+
+    return {
+      company: {
+        name: cleanedName,
+        company_uname,
+      },
+    };
+  }
+
+  /**
+   * Invite or search a user by email
+   */
+  static async inviteUserByEmail(email: string): Promise<any> {
+    try {
+      console.log(' [Service] inviteUserByEmail:', email);
+      const response = await api.post('/c/addUser', {
+        user: { email },
+      });
+      console.log(' [Service] inviteUserByEmail response status:', response.status);
+      return response.data;
+    } catch (error: any) {
+      console.error(' [Service] inviteUserByEmail error:', error?.response?.data || error.message);
       throw error;
     }
   }

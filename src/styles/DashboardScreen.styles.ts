@@ -278,4 +278,29 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Members modal - results list
+  memberList: {
+    marginTop: 12,
+  },
+  memberRow: {
+    paddingVertical: 10,
+    borderBottomColor: '#333',
+    borderBottomWidth: Platform.select({ ios: 0.5, android: StyleSheet.hairlineWidth, default: StyleSheet.hairlineWidth }) as number,
+  },
+  memberName: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  memberEmail: {
+    color: '#aaa',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  memberEmptyText: {
+    color: '#888',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 10,
+  },
 });
