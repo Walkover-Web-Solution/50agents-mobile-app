@@ -110,8 +110,8 @@ export const organizationStyles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: CONFIG.APP.ORGANIZATION_COLORS.logoutButtonColor, 
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
     borderRadius: 8,
     marginBottom: 20,
   },
@@ -122,7 +122,7 @@ export const organizationStyles = StyleSheet.create({
     textAlign: 'center',
   },
   bottomContainer: {
-    padding: 24,
-    paddingBottom: 40,
+    padding: 10,
+    paddingBottom: 14,
   },
 });
