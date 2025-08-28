@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
-  StatusBar,
-  Keyboard,
   PanResponder,
   Animated,
   Dimensions,
   Alert,
+  Keyboard,
+  StatusBar,
 } from 'react-native';
 import {
   useNavigation, useRoute, RouteProp
@@ -502,6 +502,42 @@ const ChatScreen = () => {
     );
   };
 
+  // Add pan responder for swipe to close modal
+  const panY = useRef(new Animated.Value(0)).current;
+  
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 10;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+          // Close modal on swipe down
+          Animated.timing(panY, {
+            toValue: 300,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowThreadsList(false);
+            panY.setValue(0);
+          });
+        } else {
+          // Snap back
+          Animated.spring(panY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -521,9 +557,9 @@ const ChatScreen = () => {
         translucent={true} 
       />
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? -10 : -20}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.flex}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? -10 : 0}
       >
         {/* Header */}
         <View style={[styles.header, { 
@@ -608,44 +644,53 @@ const ChatScreen = () => {
       <Modal
         visible={showThreadsList}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="overFullScreen"
+        transparent={true}
         onRequestClose={() => setShowThreadsList(false)}
       >
-        <View style={styles.threadsModal}>
-          {/* Threads Modal Header */}
-          <View style={styles.threadsHeader}>
-            <Text style={styles.threadsTitle}>Chat History</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowThreadsList(false)}
-            >
-              <Text style={styles.closeIcon}>×</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Threads List */}
-          <FlatList
-            data={allThreads}
-            keyExtractor={(item) => item.tid}
-            style={styles.threadsList}
-            contentContainerStyle={styles.threadsContainer}
-            renderItem={renderThreadItem}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyThreads}>
-                <Text style={styles.emptyText}>No previous conversations</Text>
-                <Text style={styles.emptySubtext}>Start a new conversation to see it here</Text>
-              </View>
-            )}
-          />
-          
-          {/* New Thread Button - Moved to bottom */}
-          <TouchableOpacity 
-            style={styles.newThreadButton}
-            onPress={createNewThread}
+        <View style={styles.modalBackdrop}>
+          <Animated.View 
+            style={[
+              styles.threadsModal,
+              { transform: [{ translateY: panY }] }
+            ]}
+            {...panResponder.panHandlers}
           >
-            <Text style={styles.newThreadIcon}>+</Text>
-            <Text style={styles.newThreadText}>New Conversation</Text>
-          </TouchableOpacity>
+            {/* Threads Modal Header */}
+            <View style={styles.threadsHeader}>
+              <Text style={styles.threadsTitle}>Chat History</Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowThreadsList(false)}
+              >
+                <Text style={styles.closeIcon}>×</Text>
+              </TouchableOpacity>
+            </View> 
+            
+            {/* Threads List */}
+            <FlatList
+              data={allThreads}
+              keyExtractor={(item) => item.tid}
+              style={styles.threadsList}
+              contentContainerStyle={styles.threadsContainer}
+              renderItem={renderThreadItem}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyThreads}>
+                  <Text style={styles.emptyText}>No previous conversations</Text>
+                  <Text style={styles.emptySubtext}>Start a new conversation to see it here</Text>
+                </View>
+              )}
+            />
+            
+            {/* New Thread Button - Moved to bottom */}
+            <TouchableOpacity 
+              style={styles.newThreadButton}
+              onPress={createNewThread}
+            >
+              <Text style={styles.newThreadIcon}>+</Text>
+              <Text style={styles.newThreadText}>New Conversation</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </Modal>
     </View>

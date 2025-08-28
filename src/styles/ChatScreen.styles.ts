@@ -315,8 +315,14 @@ export const chatStyles = StyleSheet.create({
     fontWeight: '600',
   },
   threadsModal: {
-    flex: 1,
     backgroundColor: '#212121',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    flex: 1,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   swipeIndicator: {
     width: 40,
