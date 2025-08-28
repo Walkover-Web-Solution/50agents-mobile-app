@@ -648,50 +648,48 @@ const ChatScreen = () => {
         transparent={true}
         onRequestClose={() => setShowThreadsList(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <Animated.View 
-            style={[
-              styles.threadsModal,
-              { transform: [{ translateY: panY }] }
-            ]}
-            {...panResponder.panHandlers}
-          >
-            {/* Threads Modal Header */}
-            <View style={styles.threadsHeader}>
-              <Text style={styles.threadsTitle}>Chat History</Text>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setShowThreadsList(false)}
-              >
-                <Text style={styles.closeIcon}>×</Text>
-              </TouchableOpacity>
-            </View> 
-            
-            {/* Threads List */}
-            <FlatList
-              data={allThreads}
-              keyExtractor={(item) => item.tid}
-              style={styles.threadsList}
-              contentContainerStyle={styles.threadsContainer}
-              renderItem={renderThreadItem}
-              ListEmptyComponent={() => (
-                <View style={styles.emptyThreads}>
-                  <Text style={styles.emptyText}>No previous conversations</Text>
-                  <Text style={styles.emptySubtext}>Start a new conversation to see it here</Text>
-                </View>
-              )}
-            />
-            
-            {/* New Thread Button - Moved to bottom */}
+        <Animated.View 
+          style={[
+            styles.threadsModal,
+            { transform: [{ translateY: panY }] }
+          ]}
+          {...panResponder.panHandlers}
+        >
+          {/* Threads Modal Header */}
+          <View style={styles.threadsHeader}>
+            <Text style={styles.threadsTitle}>Chat History</Text>
             <TouchableOpacity 
-              style={styles.newThreadButton}
-              onPress={createNewThread}
+              style={styles.closeButton}
+              onPress={() => setShowThreadsList(false)}
             >
-              <Text style={styles.newThreadIcon}>+</Text>
-              <Text style={styles.newThreadText}>New Conversation</Text>
+              <Text style={styles.closeIcon}>×</Text>
             </TouchableOpacity>
-          </Animated.View>
-        </View>
+          </View> 
+            
+          {/* Threads List */}
+          <FlatList
+            data={allThreads}
+            keyExtractor={(item) => item.tid}
+            style={styles.threadsList}
+            contentContainerStyle={styles.threadsContainer}
+            renderItem={renderThreadItem}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyThreads}>
+                <Text style={styles.emptyText}>No previous conversations</Text>
+                <Text style={styles.emptySubtext}>Start a new conversation to see it here</Text>
+              </View>
+            )}
+          />
+            
+          {/* New Thread Button - Moved to bottom */}
+          <TouchableOpacity 
+            style={styles.newThreadButton}
+            onPress={createNewThread}
+          >
+            <Text style={styles.newThreadIcon}>+</Text>
+            <Text style={styles.newThreadText}>New Conversation</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </Modal>
     </View>
   );
