@@ -180,13 +180,14 @@ const DashboardScreen = () => {
       />
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate('OrganizationSelection')}
-          >
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
           <Text style={styles.organizationName}>{companyName}</Text>
+          <TouchableOpacity
+            style={styles.headerBackIconButton}
+            onPress={() => navigation.navigate('OrganizationSelection')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.headerBackIcon}>←</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => setDropdownVisible(!dropdownVisible)}

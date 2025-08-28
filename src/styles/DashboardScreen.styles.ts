@@ -40,7 +40,7 @@ export const dashboardStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     flex: 1,
-    marginLeft: 15,
+    marginLeft: 0,
   },
   dropdownButton: {
     width: 40,
@@ -52,6 +52,23 @@ export const dashboardStyles = StyleSheet.create({
   dropdownArrow: {
     fontSize: 16,
     color: '#ffffff',
+    fontWeight: '600',
+  },
+  // Small back pill placed before organization name
+  headerBackPill: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  headerBackPillText: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
   },
   backButton: {
@@ -169,6 +186,25 @@ export const dashboardStyles = StyleSheet.create({
   dropdownItemText: {
     color: '#fff',
     fontSize: 16,
+  },
+  // Right-side back icon next to organization name
+  headerBackIconButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+    marginLeft: 8,
+    marginRight: 6,
+  },
+  headerBackIcon: {
+    fontSize: 20,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  headerBackIconImg: {
+    width: 20,
+    height: 20,
   },
   // Modal styles
   modalOverlay: {
