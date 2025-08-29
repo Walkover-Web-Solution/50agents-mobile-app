@@ -76,7 +76,7 @@ export const dashboardStyles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 20,             
     marginLeft: 4,
   },
   backArrow: {

@@ -84,11 +84,13 @@ export const chatStyles = StyleSheet.create({
     color: '#ffffff',
   },
   userBubble: {
-    borderRadius: 18,
-    padding: 16,
-    maxWidth: '85%',
     backgroundColor: '#2563eb',
-    marginLeft: 16,
+    paddingVertical: 1,
+    paddingHorizontal: 30,
+    borderRadius: 18,
+    maxWidth: '85%',
+    justifyContent: 'center',
+    minHeight: 38,
   },
   userMessageText: {
     fontSize: 16,
@@ -130,11 +132,13 @@ export const chatStyles = StyleSheet.create({
     marginLeft: 8,
   },
   agentBubble: {
-    borderRadius: 18,
-    padding: 16,
-    maxWidth: '85%',
     backgroundColor: '#374151',
-    marginRight: 16,
+    paddingVertical: 1,
+    paddingHorizontal: 30,
+    borderRadius: 18,
+    maxWidth: '85%',
+    justifyContent: 'center',
+    minHeight: 38,
   },
   agentMessageText: {
     fontSize: 16,
@@ -145,10 +149,11 @@ export const chatStyles = StyleSheet.create({
     }),
   },
   inputContainer: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    paddingBottom: 0,
+    paddingHorizontal: 15,
+    paddingTop: 25,
+    paddingBottom: 15,
     backgroundColor: '#212121',
+    marginBottom: Platform.OS === 'android' ? 5 : 0, // Lift input bar slightly on Android
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -526,3 +531,56 @@ export const chatStyles = StyleSheet.create({
     }),
   },
 });
+
+// Markdown theme for react-native-markdown-display
+// Ensures readable typography on dark bubbles and supports headings, lists, bold/italic, code, etc.
+export const markdownTheme = {
+  body: { color: '#e5e7eb', fontSize: 15, lineHeight: 22 },
+  paragraph: { color: '#e5e7eb' },
+
+  heading1: { color: '#22d3ee', fontSize: 22, fontWeight: '800', marginBottom: 8 },   // Cyan
+  heading2: { color: '#a78bfa', fontSize: 19, fontWeight: '800', marginBottom: 6 },   // Violet
+  heading3: { color: '#f59e0b', fontSize: 17, fontWeight: '700', marginBottom: 4 },   // Amber
+  heading4: { color: '#34d399', fontSize: 15, fontWeight: '700', marginBottom: 3 },   // Emerald
+  heading5: { color: '#f472b6', fontSize: 14, fontWeight: '700', marginBottom: 2 },   // Pink
+  heading6: { color: '#60a5fa', fontSize: 13, fontWeight: '700', marginBottom: 2 },   // Sky
+
+  strong: { fontWeight: '700', color: '#fefefe' },
+  em: { fontStyle: 'italic', color: '#f472b6' },
+  link: { color: '#38bdf8', textDecorationLine: 'underline' },
+
+  bullet_list: { color: '#c4b5fd' },
+  ordered_list: { color: '#93c5fd' },
+  list_item: { color: '#e5e7eb' },
+
+  blockquote: {
+    backgroundColor: 'rgba(245, 158, 11, 0.08)', // amber tint
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
+    paddingLeft: 12,
+    paddingVertical: 8,
+    color: '#f3f4f6',
+  },
+
+  code_inline: {
+    backgroundColor: '#0b1220',
+    color: '#e2e8f0',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+
+  fence: {
+    backgroundColor: '#0f172a',
+    color: '#e5e7eb',
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#22d3ee', // cyan accent bar
+  },
+
+  hr: { backgroundColor: '#334155', height: 1 },
+} as const;

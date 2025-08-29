@@ -243,7 +243,7 @@ const DashboardScreen = () => {
             onPress={() => navigation.navigate('OrganizationSelection')}
             activeOpacity={0.7}
           >
-            <Text style={styles.headerBackIcon}>←</Text>
+            <Text style={{color: '#ffffff', fontSize: 18, fontWeight: 'bold'}}>⇄</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dropdownButton}

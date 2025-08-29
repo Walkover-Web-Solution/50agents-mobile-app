@@ -23,10 +23,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatAPI, Message, AgentDetails, ChatThread } from '../services/chatApi';
-import { chatStyles as styles } from '../styles/ChatScreen.styles';
+import { chatStyles as styles, markdownTheme } from '../styles/ChatScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserEmail } from '../utils/auth';
+import Markdown from 'react-native-markdown-display';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -352,9 +353,7 @@ const ChatScreen = () => {
               </View>
             </View>
             <View style={styles.userBubble}>
-              <Text style={styles.userMessageText}>
-                {item.text}
-              </Text>
+              <Markdown style={markdownTheme}>{item.text}</Markdown>
             </View>
           </View>
         ) : (
@@ -369,9 +368,7 @@ const ChatScreen = () => {
               </Text>
             </View>
             <View style={styles.agentBubble}>
-              <Text style={styles.agentMessageText}>
-                {item.text}
-              </Text>
+              <Markdown style={markdownTheme}>{item.text}</Markdown>
             </View>
           </View>
         )}
