@@ -590,25 +590,27 @@ const ChatScreen = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 45 : 0}
       >
         {/* Messages or Welcome Screen */}
-        {messages.length === 0 ? (
-          renderWelcomeScreen()
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={({ item, index }) => renderMessage({ item, index })}
-            keyExtractor={(item) => item.id}
-            style={styles.messagesList}
-            contentContainerStyle={styles.messagesContainer}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => {
-              if (flatListRef.current && messages.length > 0) {
-                flatListRef.current.scrollToEnd({ animated: true });
-              }
-            }}
-          />
-        )}
+        <View style={styles.contentArea}>
+          {messages.length === 0 ? (
+            renderWelcomeScreen()
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={({ item, index }) => renderMessage({ item, index })}
+              keyExtractor={(item) => item.id}
+              style={styles.messagesList}
+              contentContainerStyle={styles.messagesContainer}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => {
+                if (flatListRef.current && messages.length > 0) {
+                  flatListRef.current.scrollToEnd({ animated: true });
+                }
+              }}
+            />
+          )}
+        </View>
 
         {/* Input Container */}
         <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>

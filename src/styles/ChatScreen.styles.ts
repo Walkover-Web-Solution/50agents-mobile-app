@@ -8,6 +8,10 @@ export const chatStyles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  contentArea: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -20,10 +24,12 @@ export const chatStyles = StyleSheet.create({
     fontSize: 16,
   },
   welcomeContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingVertical: 60,
+    minHeight: 200,
+    maxHeight: '50%',
   },
   welcomeTitle: {
     fontSize: 32,
