@@ -7,6 +7,7 @@ export const API_CONFIG = {
   // Base URLs
   BASE_URL: 'https://routes.msg91.com/api',
   CHAT_BASE_URL: 'https://chat.50agents.com',
+  WEBSOCKET_URL: 'wss://your-websocket-server.com', // <-- Replace with your actual WebSocket server URL
   
   // API Keys and Authentication
   AUTH_KEY: '338350fba412c8c973c4fdb292a2a9c6',
