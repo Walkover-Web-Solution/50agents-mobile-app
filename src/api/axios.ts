@@ -17,7 +17,7 @@ export const getAuthToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const endpoint = `https://dev-assistant-api-1091285226236.asia-south1.run.app/utility/get-proxy-token?otpToken=${encodeURIComponent(jwtToken)}`;
+    const endpoint = `https://flow.sokt.io/func/scrifta5dq36?otpToken=${encodeURIComponent(jwtToken)}&service=50agents`;
     
     console.log('Making proxy token request to:', endpoint);
     

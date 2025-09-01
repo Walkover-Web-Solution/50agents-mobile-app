@@ -94,6 +94,20 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  // Logout when user taps Retry on error state
+  const handleRetryLogout = async (): Promise<void> => {
+    try {
+      const { logout } = require('../utils/auth');
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (e) {
+      console.error(' Error during logout from retry:', e);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -126,7 +140,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton}
-            onPress={loadOrganizations}
+            onPress={handleRetryLogout}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
