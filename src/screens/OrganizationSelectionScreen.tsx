@@ -62,7 +62,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
       console.log(' Switching to organization:', company.name);
       console.log(' Organization ID:', company.id);
       
-      // Step 1: Call switch-org API using service
+      // Step 1: Call switch-org API using servicew1    
       await OrganizationService.switchOrganization(company.id.toString());
       
       // Step 2: Save selected organization
@@ -104,7 +104,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
         routes: [{ name: 'Login' }],
       });
     } catch (e) {
-      console.error(' Error during logout from retry:', e);
+      console.error(' Error during logout from retry:', e);                                                                                                            
     }
   };
 

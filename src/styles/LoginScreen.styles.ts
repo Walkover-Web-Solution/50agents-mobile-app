@@ -13,6 +13,9 @@ export const loginStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#1f2937', // Dark text for white background
+    textAlign: 'center',
+    width: '100%',
+    maxWidth: 300,
   },
   subtitle: {
     fontSize: 16,
