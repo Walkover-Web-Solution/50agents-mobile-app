@@ -344,13 +344,6 @@ const DashboardScreen = () => {
               <Text style={styles.dropdownItemIcon}>+</Text>
               <Text style={styles.dropdownItemText}>Create Org</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.dropdownItem} onPress={() => {
-              setDropdownVisible(false);
-              setCreateAssistantModalVisible(true);
-            }}>
-              <Text style={styles.dropdownItemIcon}>🤖</Text>
-              <Text style={styles.dropdownItemText}>Create Assistant</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.dropdownItem} onPress={async () => {
               setDropdownVisible(false);
               Alert.alert(
