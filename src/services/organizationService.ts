@@ -2,6 +2,7 @@ import api from '../api/axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getProxyAuthToken } from '../utils/auth';
 import type { Company } from '../types/api';
+import { ChatAPI } from './chatApi';
 
 // API Response interfaces
 export interface OrganizationApiResponse {
@@ -215,6 +216,11 @@ export class OrganizationService {
             await AsyncStorage.setItem('currentAgentId', agentId);
           }
         }
+        
+        // Persist current organization for downstream services (e.g., ownership checks)
+        await AsyncStorage.setItem('currentOrgId', orgId);
+        // Invalidate owned-agents cache for this org to reflect fresh permissions
+        ChatAPI.invalidateOwnershipCache(orgId);
         
         // Save user profile data
         if (data?.data) {

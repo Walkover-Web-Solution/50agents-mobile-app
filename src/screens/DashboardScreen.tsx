@@ -135,7 +135,7 @@ const DashboardScreen = () => {
   }, [companyName]); // Refetch when organization changes
 
   const handleAgentPress = (agent: Agent) => {
-
+    console.log(' [Dashboard] Open chat for agent:', { name: agent.name, _id: agent._id });
     navigation.navigate('Chat', {
       agentId: agent._id,
       agentName: agent.name,

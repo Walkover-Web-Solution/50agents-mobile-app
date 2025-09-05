@@ -22,12 +22,13 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ChatAPI, Message, AgentDetails, ChatThread } from '../services/chatApi';
+import { ChatAPI, Message, AgentDetails, ChatThread, ModelOption } from '../services/chatApi';
 import { chatStyles as styles, markdownTheme } from '../styles/ChatScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserEmail } from '../utils/auth';
 import Markdown from 'react-native-markdown-display';
+import Svg, { Path } from 'react-native-svg';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -51,6 +52,13 @@ const ChatScreen = () => {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
 
+  // Model switching state
+  const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [updatingModel, setUpdatingModel] = useState(false);
+  const [ownershipChecking, setOwnershipChecking] = useState(false);
+  const [isOwned, setIsOwned] = useState<boolean>(false);
+
   // Phase 1: Agent Config Loading (UI Bootstrap)
   useEffect(() => {
     loadAgentConfig();
@@ -59,6 +67,7 @@ const ChatScreen = () => {
       loadThreadHistory(threadId);
     }
     loadAllThreads();
+    loadAvailableModels();
   }, []);
 
   const loadAgentConfig = async () => {
@@ -66,6 +75,14 @@ const ChatScreen = () => {
       const details = await ChatAPI.loadAgentConfig(agentId);
       if (details) {
         setAgentDetails(details);
+      }
+      // Strict ownership compute using service encapsulation
+      try {
+        const owned = await ChatAPI.isAgentOwned(agentId);
+        setIsOwned(owned);
+      } catch {
+        // On any error, be conservative: treat as non-owned (hide UI)
+        setIsOwned(false);
       }
     } catch (error) {
       console.log('❌ Agent Config Load Error:', error);
@@ -154,6 +171,16 @@ const ChatScreen = () => {
       setAllThreads(threads);
     } catch (error) {
       console.log('❌ Error loading all threads:', error);
+    }
+  };
+
+  const loadAvailableModels = async () => {
+    try {
+      const models = await ChatAPI.getAvailableModels();
+      setAvailableModels(models);
+    } catch (error) {
+      console.log('❌ Error loading available models:', error);
+      setAvailableModels([]);
     }
   };
 
@@ -536,6 +563,41 @@ const ChatScreen = () => {
     })
   ).current;
 
+  const currentModelLabel = agentDetails?.llm?.model || 'Model';
+
+  const handleModelSelect = async (option: ModelOption) => {
+    try {
+      console.log(' [ModelSwitch:UI] onSelect ->', { agentId, option });
+      setUpdatingModel(true);
+      const resp = await ChatAPI.updateAgentModel(agentId, option.id, option.service);
+      if (resp.success) {
+        setAgentDetails(prev => prev ? ({ ...prev, llm: { service: option.service, model: option.id } }) : prev);
+        setShowModelDropdown(false);
+      } else {
+        Alert.alert('Model Update', resp.message || 'Unable to update model.');
+      }
+    } catch (e) {
+      Alert.alert('Model Update', 'Failed to update the model.');
+    } finally {
+      setUpdatingModel(false);
+    }
+  };
+
+  const toggleModelDropdownWithOwnership = async () => {
+    if (updatingModel || ownershipChecking) return;
+    try {
+      setOwnershipChecking(true);
+      console.log(' [ModelSwitch:UI] toggle dropdown for agentId:', agentId, 'isOwned:', isOwned);
+      if (!isOwned) {
+        Alert.alert('Model Update', "You can only modify agents that you own. Try creating a new assistant or use 'My Assistant'.");
+        return;
+      }
+      setShowModelDropdown(prev => !prev);
+    } finally {
+      setOwnershipChecking(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -558,24 +620,59 @@ const ChatScreen = () => {
       {/* Header */}
       <View style={[styles.header, { 
         paddingTop: Platform.OS === 'android' ? insets.top + 14 : 14 
-      }]}>
+      }]}>        
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backArrow}>←</Text>
+          <Svg width={22} height={22} viewBox="0 0 24 24">
+            <Path
+              d="M14 6l-6 6 6 6"
+              stroke="#ffffff"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <Path
+              d="M20 12H9"
+              stroke="#ffffff"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </Svg>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>
+          <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>            
             <Text style={styles.headerInitial}>
               {getAvatarInitials(displayName)}
             </Text>
           </View>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
             {displayName}
           </Text>
         </View>
         <View style={styles.headerSpacer} />
+
+        {/* Model button (visible only for owned agents) */}
+        {isOwned && (
+          <TouchableOpacity 
+            style={styles.modelButton}
+            onPress={toggleModelDropdownWithOwnership}
+            disabled={updatingModel || ownershipChecking}
+          >
+            {updatingModel || ownershipChecking ? (
+              <ActivityIndicator size="small" color="#f9fafb" />
+            ) : (
+              <Text style={styles.modelButtonText} numberOfLines={1}>
+                {currentModelLabel}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity 
           style={styles.threadsButton}
           onPress={() => setShowThreadsList(true)}
@@ -584,6 +681,35 @@ const ChatScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Models dropdown (only for owned agents) */}
+      {isOwned && showModelDropdown && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowModelDropdown(false)}
+          style={styles.dropdownBackdrop}
+        >
+          <View style={[styles.modelDropdown, { top: (Platform.OS === 'android' ? insets.top + 68 : insets.top + 60), right: 12 }]}>            
+            <Text style={styles.modelDropdownTitle}>Switch model</Text>
+            <FlatList
+              data={availableModels}
+              keyExtractor={(item) => `${item.service}:${item.id}`}
+              style={{ maxHeight: 300 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.modelOption} onPress={() => handleModelSelect(item)}>
+                  <Text style={styles.modelOptionText}>{item.name}</Text>
+                  <Text style={styles.modelServiceTag}>{item.service}</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyModels}>                  
+                  <Text style={styles.emptyText}>No models available</Text>
+                </View>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      )}
+      
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}

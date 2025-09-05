@@ -33,11 +33,32 @@ export interface ChatThread {
   serverId?: string;    // Server's _id for reference
 }
 
+// Model option for model-switch dropdown
+export interface ModelOption {
+  id: string;
+  name: string;
+  service: string;
+}
+
 export class ChatAPI {
+  // Build dynamic proxy prefix from storage (falls back to defaults)
+  private static async getProxyPrefix(): Promise<string> {
+    try {
+      const companyId = await AsyncStorage.getItem('currentCompanyId');
+      const userId = await AsyncStorage.getItem('currentUserId');
+      const c = companyId || '870623';
+      const u = userId || '36jowpr17';
+      return `/proxy/${c}/${u}`;
+    } catch {
+      return `/proxy/870623/36jowpr17`;
+    }
+  }
+
   // Load agent configuration
   static async loadAgentConfig(agentId: string): Promise<AgentDetails | null> {
     try {
-      const agentResponse = await api.get(`/proxy/870623/36jowpr17/agent/${agentId}`);
+      const prefix = await this.getProxyPrefix();
+      const agentResponse = await api.get(`${prefix}/agent/${agentId}`);
       
       if (agentResponse.data.success && agentResponse.data.data) {
         const details = agentResponse.data.data;
@@ -45,7 +66,7 @@ export class ChatAPI {
         return details;
       }
       return null;
-    } catch (error) {
+    } catch (error: any) {
       console.log('❌ Agent Config Load Error:', error);
       return null;
     }
@@ -63,7 +84,8 @@ export class ChatAPI {
         return [];
       }
       
-      const response = await api.get(`/proxy/870623/36jowpr17/chat/message/${threadId}`);
+      const prefix = await this.getProxyPrefix();
+      const response = await api.get(`${prefix}/chat/message/${threadId}`);
       
       if (response.data.success && response.data.data?.messages) {
         const serverMessages = response.data.data.messages;
@@ -107,9 +129,10 @@ export class ChatAPI {
       const { getProxyAuthToken } = require('../utils/auth');
       const token = await getProxyAuthToken();
       
+      const prefix = await this.getProxyPrefix();
       const chatEndpoint = currentThreadId 
-        ? `/proxy/870623/36jowpr17/chat/message?tid=${currentThreadId}`
-        : `/proxy/870623/36jowpr17/chat/message`;
+        ? `${prefix}/chat/message?tid=${currentThreadId}`
+        : `${prefix}/chat/message`;
       
       const chatPayload = {
         message: messageText,
@@ -182,7 +205,7 @@ export class ChatAPI {
         }));
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.log('❌ Error saving thread data:', error);
     }
   }
@@ -199,7 +222,8 @@ export class ChatAPI {
       }
       
       // Use axios API for consistency with sendMessage
-      const response = await api.get(`/proxy/870623/36jowpr17/thread/${agentId}`);
+      const prefix = await this.getProxyPrefix();
+      const response = await api.get(`${prefix}/thread/${agentId}`);
 
       // Check if response is successful
       if (response.data.status === 'success' && response.data.data?.threads) {
@@ -224,7 +248,7 @@ export class ChatAPI {
         return [];
       }
       
-    } catch (error) {
+    } catch (error: any) {
       // Fallback to local threads if API fails
       return await this.loadLocalThreads(agentId);
     }
@@ -265,7 +289,7 @@ export class ChatAPI {
               }
             }
           }
-        } catch (error) {
+        } catch (error: any) {
           console.log('❌ Error loading local thread:', key, error);
         }
       }
@@ -273,7 +297,7 @@ export class ChatAPI {
       threads.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
       
       return threads;
-    } catch (error) {
+    } catch (error: any) {
       console.log('❌ Error loading local threads:', error);
       return [];
     }
@@ -282,11 +306,161 @@ export class ChatAPI {
   // Delete a thread
   static async deleteThread(threadId: string): Promise<boolean> {
     try {
-      const response = await api.delete(`/proxy/870623/36jowpr17/thread/${threadId}`);
+      const prefix = await this.getProxyPrefix();
+      const response = await api.delete(`${prefix}/thread/${threadId}`);
       return response.status === 200;
-    } catch (error) {
+    } catch (error: any) {
       console.log('❌ Delete Thread Error:', error);
       return false;
+    }
+  }
+
+  // ===== Model switching helpers/APIs =====
+  // Cache of owned agent IDs per-organization to reduce repeated validation calls
+  private static ownedAgentsCacheByOrg: Record<string, Set<string>> = {};
+
+  private static async getCurrentOrgId(): Promise<string> {
+    try {
+      // currentOrgId is set by OrganizationService.switchOrganization
+      const orgId = await AsyncStorage.getItem('currentOrgId');
+      return orgId || 'default';
+    } catch {
+      return 'default';
+    }
+  }
+
+  private static async getUserOwnedAgents(): Promise<Set<string>> {
+    try {
+      const orgId = await this.getCurrentOrgId();
+      if (this.ownedAgentsCacheByOrg[orgId]) {
+        return this.ownedAgentsCacheByOrg[orgId];
+      }
+
+      const prefix = await this.getProxyPrefix();
+      const response = await api.get(`${prefix}/agent/`);
+      const agents = response.data?.data?.agents || response.data?.data || [];
+
+      const ids = new Set<string>();
+      if (Array.isArray(agents)) {
+        agents.forEach((agent: any) => {
+          const id = agent?._id || agent?.id || agent?.agentId;
+          if (id) ids.add(String(id));
+        });
+      }
+
+      this.ownedAgentsCacheByOrg[orgId] = ids;
+      return ids;
+    } catch (error: any) {
+      console.warn('⚠️ getUserOwnedAgents warning:', error?.response?.status, error?.message);
+      // Return empty set so caller can decide whether to proceed
+      return new Set<string>();
+    }
+  }
+
+  private static normalizeName(name: string | undefined | null): string {
+    return (name || '').trim().toLowerCase();
+  }
+
+  private static async confirmOwnershipByAgentDetails(agentId: string): Promise<boolean | null> {
+    try {
+      const details = await this.loadAgentConfig(agentId);
+      if (!details) return null;
+      const ownerName = this.normalizeName(details.ownerName);
+      const userProfileRaw = await AsyncStorage.getItem('userProfile');
+      const userProfile = userProfileRaw ? JSON.parse(userProfileRaw) : null;
+      const currentUserName = this.normalizeName(userProfile?.name);
+      if (!ownerName || !currentUserName) return null;
+      return ownerName === currentUserName;
+    } catch (error: any) {
+      return null;
+    }
+  }
+
+  static async isAgentOwned(agentId: string): Promise<boolean> {
+    const owned = await this.getUserOwnedAgents();
+    if (owned.size === 0) {
+      // Indeterminate; avoid blocking
+      return true;
+    }
+    if (owned.has(agentId)) return true;
+    // Double-check via agent details/ownerName
+    const confirm = await this.confirmOwnershipByAgentDetails(agentId);
+    if (confirm === true) return true;
+    if (confirm === false) return false;
+    // Indeterminate; allow
+    return true;
+  }
+
+  static invalidateOwnershipCache(orgId?: string) {
+    if (orgId) {
+      delete this.ownedAgentsCacheByOrg[orgId];
+    } else {
+      this.ownedAgentsCacheByOrg = {};
+    }
+  }
+
+  static async getAvailableModels(): Promise<ModelOption[]> {
+    try {
+      const prefix = await this.getProxyPrefix();
+      const response = await api.get(`${prefix}/utility/services-models`);
+      const options: ModelOption[] = [];
+
+      if (response.data?.status === 'success' && response.data?.data) {
+        const { services, models } = response.data.data as { services: string[]; models: Record<string, string[]> };
+        const knownServices = Array.isArray(services) ? services : Object.keys(models || {});
+
+        knownServices.forEach((service: string) => {
+          const list: string[] = (models && models[service]) || [];
+          list.forEach((modelName: any) => {
+            const name = String(modelName || '').trim();
+            if (!name) return;
+            // Filter out stray service names in model list
+            if (knownServices.includes(name)) return;
+            options.push({ id: name, name, service });
+          });
+        });
+      }
+
+      return options;
+    } catch (error: any) {
+      console.warn('⚠️ getAvailableModels error:', error?.response?.status, error?.message);
+      return [];
+    }
+  }
+
+  static async updateAgentModel(
+    agentId: string,
+    model: string,
+    service: string
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      // Robust pre-validation: only block when we are confident the agent is NOT owned
+      const ownedCheck = await this.isAgentOwned(agentId);
+      if (ownedCheck === false) {
+        return {
+          success: false,
+          message: "You can only modify agents that you own. Try creating a new assistant or use 'My Assistant'.",
+        };
+      }
+
+      const payload = { llm: { service, model } };
+      const prefix = await this.getProxyPrefix();
+      console.log(' [ModelSwitch] PATCH updateAgentModel ->', { agentId, service, model, url: `${prefix}/agent/${agentId}?` });
+      const resp = await api.patch(`${prefix}/agent/${agentId}?`, payload);
+
+      if (resp.status === 200 && (resp.data?.success || resp.data?.status === 'success')) {
+        return { success: true };
+      }
+
+      const errMessage = resp.data?.message || 'Unable to update model.';
+      return { success: false, message: errMessage };
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const msg = error?.response?.data?.message || error?.message || 'Request failed';
+      if (status === 403) {
+        return { success: false, message: 'You are not authorized to update this agent.' };
+      }
+      return { success: false, message: msg };
     }
   }
 }
