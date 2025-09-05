@@ -39,6 +39,23 @@ export interface DashboardApiResponse {
   message?: string;
 }
 
+// Create Agent Request interface
+export interface CreateAgentRequest {
+  name: string;
+  instructions: string;
+  llm: {
+    service: string;
+    model: string;
+  };
+}
+
+// Create Agent Response interface
+export interface CreateAgentResponse {
+  success: boolean;
+  data?: Agent;
+  message?: string;
+}
+
 // Dashboard Service Class
 export class DashboardService {
   /**
@@ -222,6 +239,33 @@ export class DashboardService {
    */
   static isUserOwnOrganization(companyName: string): boolean {
     return true;
+  }
+
+  /**
+   * Create a new agent/assistant
+   * Based on CURL: POST /api/proxy/870623/36jowpr17/agent/
+   * Payload: {name, instructions, llm: {service: "openai", model: "gpt-5"}}
+   */
+  static async createAgent(companyId: string, userId: string, agentData: CreateAgentRequest): Promise<CreateAgentResponse> {
+    try {
+      
+      
+      const response = await api.post<CreateAgentResponse>(`/proxy/${companyId}/${userId}/agent/`, agentData);
+      
+      if (response.data.success) {
+     
+        return response.data;
+      } else {
+        console.error('❌ [Service] Agent creation failed:', response.data.message);
+        return { success: false, message: response.data.message || 'Failed to create agent' };
+      }
+      
+    } catch (error: any) {
+      
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create agent';
+      return { success: false, message: errorMessage };
+    }
   }
 }
 

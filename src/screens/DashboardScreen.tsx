@@ -52,6 +52,11 @@ const DashboardScreen = () => {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [inviteResults, setInviteResults] = useState<{ name: string; email: string }[]>([]);
+  const [createAssistantModalVisible, setCreateAssistantModalVisible] = useState(false);
+  const [assistantName, setAssistantName] = useState('');
+  const [assistantInstructions, setAssistantInstructions] = useState('');
+  const [creatingAssistant, setCreatingAssistant] = useState(false);
+  const [createAssistantError, setCreateAssistantError] = useState<string | null>(null);
 
   // Check if this is user's own organization (with null safety)
   const isOwnOrganization = DashboardService.isUserOwnOrganization(companyName || '');
@@ -228,6 +233,73 @@ const DashboardScreen = () => {
     }
   };
 
+  const handleCreateAssistant = async () => {
+    const name = assistantName.trim();
+    const instructions = assistantInstructions.trim() || 'You are a helpful AI assistant.';
+    
+    if (!name) {
+      setCreateAssistantError('Please enter an assistant name');
+      return;
+    }
+    
+    try {
+      setCreatingAssistant(true);
+      setCreateAssistantError(null);
+      
+      // API credentials (same as other API calls)
+      const apiCompanyId = '870623';
+      const userId = '36jowpr17';
+      
+      // Create agent data matching the CURL structure
+      const agentData = {
+        name: name,
+        instructions: instructions,
+        llm: {
+          service: 'openai',
+          model: 'gpt-5' // Using gpt-5 as shown in original CURL command
+        }
+      };
+      
+      console.log('🚀 [UI] Creating assistant with data:', agentData);
+      
+      const response = await DashboardService.createAgent(apiCompanyId, userId, agentData);
+      
+      if (response.success) {
+        console.log('✅ [UI] Assistant created successfully');
+        
+        // Close modal and reset form
+        setCreateAssistantModalVisible(false);
+        setAssistantName('');
+        setAssistantInstructions('');
+        setCreateAssistantError(null);
+        
+        // Refresh the agents list
+        await fetchDashboardAgents();
+        
+        // Navigate directly to the newly created agent's chat
+        if (response.data && response.data._id) {
+          navigation.navigate('Chat', {
+            agentId: response.data._id,
+            agentName: response.data.name || name,
+            agentColor: getAvatarColor(response.data.name || name),
+          });
+        }
+        
+        // Optional: Show brief success message
+        // Alert.alert('Success', `Assistant "${name}" created successfully!`);
+      }else {
+        setCreateAssistantError(response.message || 'Failed to create assistant');
+      }
+      
+    } catch (error: any) {
+      console.error('🚨 [UI] Error creating assistant:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create assistant';
+      setCreateAssistantError(errorMessage);
+    } finally {
+      setCreatingAssistant(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -271,6 +343,13 @@ const DashboardScreen = () => {
             }}>
               <Text style={styles.dropdownItemIcon}>+</Text>
               <Text style={styles.dropdownItemText}>Create Org</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dropdownItem} onPress={() => {
+              setDropdownVisible(false);
+              setCreateAssistantModalVisible(true);
+            }}>
+              <Text style={styles.dropdownItemIcon}>🤖</Text>
+              <Text style={styles.dropdownItemText}>Create Assistant</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.dropdownItem} onPress={async () => {
               setDropdownVisible(false);
@@ -463,6 +542,89 @@ const DashboardScreen = () => {
           </View>
         </View>
       </Modal>
+      {/* Create Assistant Modal */}
+      <Modal
+        visible={createAssistantModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setCreateAssistantModalVisible(false);
+          setAssistantName('');
+          setAssistantInstructions('');
+          setCreateAssistantError(null);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create Assistant</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Assistant name"
+              placeholderTextColor="#666"
+              value={assistantName}
+              onChangeText={(t) => {
+                setAssistantName(t);
+                if (createAssistantError) setCreateAssistantError(null);
+              }}
+              autoFocus
+            />
+           <TextInput
+  style={[styles.modalInput, styles.textAreaInput]}
+  placeholder="Assistant instructions "
+  placeholderTextColor="#666"
+  value={assistantInstructions}
+  onChangeText={(t) => {
+    setAssistantInstructions(t);
+    if (createAssistantError) setCreateAssistantError(null);
+  }}
+  multiline={true}
+  numberOfLines={4}
+  textAlignVertical="top"
+  autoFocus={false}
+/>
+            {createAssistantError ? (
+              <Text style={styles.modalErrorText}>{createAssistantError}</Text>
+            ) : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setCreateAssistantModalVisible(false);
+                  setAssistantName('');
+                  setAssistantInstructions('');
+                  setCreateAssistantError(null);
+                }}
+                disabled={creatingAssistant}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalCreateButton}
+                onPress={handleCreateAssistant}
+                disabled={creatingAssistant}
+              >
+                {creatingAssistant ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Create</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => {
+          console.log('🔵 Floating button pressed!');
+          setCreateAssistantModalVisible(true);
+        }}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.floatingButtonIcon}>+</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };

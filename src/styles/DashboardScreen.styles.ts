@@ -303,4 +303,124 @@ export const dashboardStyles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 10,
   },
+  // Floating Action Button (+ button)
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  floatingButtonIcon: {
+    fontSize: 28,
+    color: '#fff',
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  // Create Assistant Modal styles
+  createModalContent: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  createModalTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#2563eb',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 16,
+    minHeight: 44,
+  },
+  textAreaInput: {
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#555',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  createModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+    gap: 12,
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: '#2563eb',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  createButton: {
+    backgroundColor: '#2563eb',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  createButtonDisabled: {
+    backgroundColor: '#555',
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  createButtonTextDisabled: {
+    color: '#999',
+  },
 });
