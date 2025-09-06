@@ -423,4 +423,55 @@ export const dashboardStyles = StyleSheet.create({
   createButtonTextDisabled: {
     color: '#999',
   },
+  // Bottom Sheet styles
+  bottomSheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    backgroundColor: '#232323',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+    paddingHorizontal: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
+  },
+  bottomSheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#444',
+    marginBottom: 8,
+  },
+  bottomSheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderBottomColor: '#333',
+    borderBottomWidth: Platform.select({ ios: 0.5, android: StyleSheet.hairlineWidth, default: StyleSheet.hairlineWidth }) as number,
+  },
+  bottomSheetItemIcon: {
+    fontSize: 18,
+    color: '#fff',
+    marginRight: 12,
+  },
+  bottomSheetItemText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });

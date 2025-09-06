@@ -28,7 +28,7 @@ import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserEmail } from '../utils/auth';
 import Markdown from 'react-native-markdown-display';
-import Svg, { Path } from 'react-native-svg';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
@@ -625,24 +625,7 @@ const ChatScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path
-              d="M14 6l-6 6 6 6"
-              stroke="#ffffff"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-            <Path
-              d="M20 12H9"
-              stroke="#ffffff"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </Svg>
+          <AntDesign name="arrowleft" size={20} color="#ffffff" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <View style={[styles.headerAvatar, { backgroundColor: getAvatarColor(displayName) }]}>            

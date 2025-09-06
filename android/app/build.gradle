@@ -119,4 +119,4 @@ dependencies {
 }
 
 // Ensure react-native-vector-icons fonts are bundled into the APK
-apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+// apply from: "../../node_modules/react-native-vector-icons/fonts.gradle" // Disabled to avoid duplicate fonts; assets are now copied via react-native-asset

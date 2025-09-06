@@ -10,6 +10,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import { RootStackParamList } from './src/types/navigation';
 import { getToken } from './src/utils/auth';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,8 @@ function App() {
 
   useEffect(() => {
     checkTokenAndSetInitialRoute();
+    // Preload AntDesign icon font to avoid any '?' fallback on first render
+    AntDesign.loadFont().catch(() => {});
   }, []);
 
   const checkTokenAndSetInitialRoute = async () => {

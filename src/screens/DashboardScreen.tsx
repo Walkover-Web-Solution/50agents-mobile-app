@@ -28,6 +28,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dashboardStyles as styles } from '../styles/DashboardScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { OrganizationService } from '../services/organizationService';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 type DashboardRouteProp = RouteProp<RootStackParamList, 'Dashboard'>;
@@ -315,7 +316,7 @@ const DashboardScreen = () => {
             onPress={() => navigation.navigate('OrganizationSelection')}
             activeOpacity={0.7}
           >
-            <Text style={{color: '#ffffff', fontSize: 18, fontWeight: 'bold'}}>⇄</Text>
+            <MaterialCommunityIcons name="swap-horizontal" color="#ffffff" size={24} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.dropdownButton}
@@ -324,53 +325,6 @@ const DashboardScreen = () => {
             <Text style={styles.dropdownArrow}>︙</Text>
           </TouchableOpacity>
         </View>
-        {dropdownVisible && (
-          <View style={styles.dropdown}>
-            <TouchableOpacity style={styles.dropdownItem} onPress={() => {
-              setDropdownVisible(false);
-              setInviteError(null);
-              setInviteSuccess(null);
-              setMemberEmail('');
-              setInviteResults([]);
-              setMembersModalVisible(true);
-            }}>
-              <Text style={styles.dropdownItemIcon}>👥</Text>
-              <Text style={styles.dropdownItemText}>Members</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.dropdownItem} onPress={() => {
-              setDropdownVisible(false);
-              setCreateOrgModalVisible(true);
-            }}>
-              <Text style={styles.dropdownItemIcon}>+</Text>
-              <Text style={styles.dropdownItemText}>Create Org</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.dropdownItem} onPress={async () => {
-              setDropdownVisible(false);
-              Alert.alert(
-                'Confirm Logout',
-                'Are you sure you want to logout?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Logout',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await appLogout();
-                      } finally {
-                        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-                      }
-                    },
-                  },
-                ],
-                { cancelable: true }
-              );
-            }}>
-               <Text style={styles.dropdownItemIcon}>↪</Text>
-               <Text style={styles.dropdownItemText}>Logout</Text>
-             </TouchableOpacity>
-          </View>
-        )}
         <Text style={styles.subtitle}>
           {isOwnOrganization
             ? 'Your agents and assistants'
@@ -378,16 +332,87 @@ const DashboardScreen = () => {
           }
         </Text>
       </View>
-
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search agents..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor="#666"
-        />
-      </View>
+      {/* Bottom Sheet for menu */}
+      <Modal
+        visible={dropdownVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDropdownVisible(false)}
+      >
+        <View style={styles.bottomSheetOverlay}>
+          {/* Tap outside to close */}
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={() => setDropdownVisible(false)}
+          />
+          <View style={styles.bottomSheet}>
+            <View style={styles.bottomSheetHandle} />
+            <TouchableOpacity
+              style={styles.bottomSheetItem}
+              onPress={() => {
+                setDropdownVisible(false);
+                setInviteError(null);
+                setInviteSuccess(null);
+                setMemberEmail('');
+                setInviteResults([]);
+                setMembersModalVisible(true);
+              }}
+            >
+              <Text style={styles.bottomSheetItemIcon}>👥</Text>
+              <Text style={styles.bottomSheetItemText}>Members</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bottomSheetItem}
+              onPress={() => {
+                setDropdownVisible(false);
+                setCreateOrgModalVisible(true);
+              }}
+            >
+              <Text style={styles.bottomSheetItemIcon}>＋</Text>
+              <Text style={styles.bottomSheetItemText}>Create Org</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.bottomSheetItem, { borderBottomWidth: 0 }]}
+              onPress={async () => {
+                setDropdownVisible(false);
+                Alert.alert(
+                  'Confirm Logout',
+                  'Are you sure you want to logout?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Logout',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await appLogout();
+                        } finally {
+                          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+                        }
+                      },
+                    },
+                  ],
+                  { cancelable: true }
+                );
+              }}
+            >
+              <Text style={styles.bottomSheetItemIcon}>↪</Text>
+              <Text style={[styles.bottomSheetItemText, { color: '#ff6b6b' }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+       
+       <View style={styles.searchContainer}>
+         <TextInput
+           style={styles.searchInput}
+           placeholder="Search agents..."
+           value={searchQuery}
+           onChangeText={setSearchQuery}
+           placeholderTextColor="#666"
+         />
+       </View>
 
       <FlatList
         data={filteredAgents}
