@@ -336,6 +336,15 @@ export class ChatAPI {
         return this.ownedAgentsCacheByOrg[orgId];
       }
 
+      // Get current user once for id comparisons
+      let currentUserId: string | null = null;
+      try {
+        const user = await this.getCurrentUser();
+        currentUserId = String(user?._id || '').trim();
+      } catch (_) {
+        currentUserId = null;
+      }
+
       const prefix = await this.getProxyPrefix();
       const response = await api.get(`${prefix}/agent/`);
       const agents = response.data?.data?.agents || response.data?.data || [];
@@ -344,15 +353,38 @@ export class ChatAPI {
       if (Array.isArray(agents)) {
         agents.forEach((agent: any) => {
           const id = agent?._id || agent?.id || agent?.agentId;
-          if (id) ids.add(String(id));
+          const createdBy = String(agent?.createdBy || '').trim();
+          const editors: string[] = Array.isArray(agent?.editors)
+            ? agent.editors.map((e: any) => String(e).trim())
+            : [];
+
+          // OWNERSHIP RULE: agent.createdBy === current user _id OR user is in editors
+          if (
+            id &&
+            currentUserId &&
+            (createdBy === currentUserId || editors.includes(currentUserId))
+          ) {
+            ids.add(String(id));
+          }
         });
+      }
+
+      // Augment with /user -> orgAgentMap (user's personal agent per org)
+      try {
+        const user = await this.getCurrentUser();
+        const map = user?.orgAgentMap || {};
+        Object.values(map || {}).forEach((aid: any) => {
+          if (aid) ids.add(String(aid));
+        });
+      } catch (e) {
+        // swallow, main source remains filtered /agent/ list
       }
 
       this.ownedAgentsCacheByOrg[orgId] = ids;
       return ids;
     } catch (error: any) {
       console.warn('⚠️ getUserOwnedAgents warning:', error?.response?.status, error?.message);
-      // Return empty set so caller can decide whether to proceed
+      // Prefer strict safe default: no ownership on error
       return new Set<string>();
     }
   }
@@ -378,17 +410,103 @@ export class ChatAPI {
 
   static async isAgentOwned(agentId: string): Promise<boolean> {
     const owned = await this.getUserOwnedAgents();
-    if (owned.size === 0) {
-      // Indeterminate; avoid blocking
-      return true;
+    return owned.has(String(agentId));
+  }
+
+  static async updateAgentModel(
+    agentId: string,
+    model: string,
+    service: string
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      // Strict pre-validation: only allow if agent is owned
+      const isOwned = await this.isAgentOwned(agentId);
+      if (!isOwned) {
+        return {
+          success: false,
+          message: "You can only modify agents that you own. Try creating a new assistant or use 'My Assistant'.",
+        };
+      }
+
+      const payload = { llm: { service, model } };
+      const prefix = await this.getProxyPrefix();
+      console.log(' [ModelSwitch] PATCH updateAgentModel ->', { agentId, service, model, url: `${prefix}/agent/${agentId}?` });
+      const resp = await api.patch(`${prefix}/agent/${agentId}?`, payload);
+
+      if (resp.status === 200 && (resp.data?.success || resp.data?.status === 'success')) {
+        return { success: true };
+      }
+
+      const errMessage = resp.data?.message || 'Unable to update model.';
+      return { success: false, message: errMessage };
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const msg = error?.response?.data?.message || error?.message || 'Request failed';
+      if (status === 403) {
+        return { success: false, message: 'You are not authorized to update this agent.' };
+      }
+      return { success: false, message: msg };
     }
-    if (owned.has(agentId)) return true;
-    // Double-check via agent details/ownerName
-    const confirm = await this.confirmOwnershipByAgentDetails(agentId);
-    if (confirm === true) return true;
-    if (confirm === false) return false;
-    // Indeterminate; allow
-    return true;
+  }
+
+  /**
+   * Get current user information
+   */
+  static async getCurrentUser(): Promise<any> {
+    try {
+      const token = await AsyncStorage.getItem('proxy_auth_token');
+      if (!token) {
+        throw new Error('No auth token found');
+      }
+
+      const response = await fetch('https://routes.msg91.com/api/proxy/870623/36jowpr17/user', {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8,hi;q=0.7',
+          'cache-control': 'no-cache',
+          'content-type': 'application/json',
+          'origin': 'https://chat.50agents.com',
+          'pragma': 'no-cache',
+          'priority': 'u=1, i',
+          'proxy_auth_token': token,
+          'referer': 'https://chat.50agents.com/',
+          'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'cross-site',
+          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+        }
+      });
+
+      const data = await response.json();
+      console.log('🔍 [ChatAPI] getCurrentUser response:', data);
+
+      if (data.success && data.data) {
+        return data.data;
+      } else {
+        throw new Error('Failed to get user data');
+      }
+    } catch (error) {
+      console.error('🚨 [ChatAPI] getCurrentUser error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if agent is owned by current user
+   * Returns true if agent should show model switch (i.e., owned by user)
+   */
+  static async isAgentOwnedByUser(agentId: string): Promise<boolean> {
+    try {
+      // Delegate to isAgentOwned which uses /agent/ and /user fallbacks
+      return await this.isAgentOwned(agentId);
+    } catch (error) {
+      console.error('� [ChatAPI] Error checking agent ownership:', error);
+      return false;
+    }
   }
 
   static invalidateOwnershipCache(orgId?: string) {
@@ -425,42 +543,6 @@ export class ChatAPI {
     } catch (error: any) {
       console.warn('⚠️ getAvailableModels error:', error?.response?.status, error?.message);
       return [];
-    }
-  }
-
-  static async updateAgentModel(
-    agentId: string,
-    model: string,
-    service: string
-  ): Promise<{ success: boolean; message?: string }> {
-    try {
-      // Robust pre-validation: only block when we are confident the agent is NOT owned
-      const ownedCheck = await this.isAgentOwned(agentId);
-      if (ownedCheck === false) {
-        return {
-          success: false,
-          message: "You can only modify agents that you own. Try creating a new assistant or use 'My Assistant'.",
-        };
-      }
-
-      const payload = { llm: { service, model } };
-      const prefix = await this.getProxyPrefix();
-      console.log(' [ModelSwitch] PATCH updateAgentModel ->', { agentId, service, model, url: `${prefix}/agent/${agentId}?` });
-      const resp = await api.patch(`${prefix}/agent/${agentId}?`, payload);
-
-      if (resp.status === 200 && (resp.data?.success || resp.data?.status === 'success')) {
-        return { success: true };
-      }
-
-      const errMessage = resp.data?.message || 'Unable to update model.';
-      return { success: false, message: errMessage };
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const msg = error?.response?.data?.message || error?.message || 'Request failed';
-      if (status === 403) {
-        return { success: false, message: 'You are not authorized to update this agent.' };
-      }
-      return { success: false, message: msg };
     }
   }
 }

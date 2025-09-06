@@ -54,10 +54,9 @@ const ChatScreen = () => {
 
   // Model switching state
   const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
+  const [showModelSwitch, setShowModelSwitch] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [updatingModel, setUpdatingModel] = useState(false);
-  const [ownershipChecking, setOwnershipChecking] = useState(false);
-  const [isOwned, setIsOwned] = useState<boolean>(false);
 
   // Phase 1: Agent Config Loading (UI Bootstrap)
   useEffect(() => {
@@ -67,7 +66,6 @@ const ChatScreen = () => {
       loadThreadHistory(threadId);
     }
     loadAllThreads();
-    loadAvailableModels();
   }, []);
 
   const loadAgentConfig = async () => {
@@ -75,14 +73,6 @@ const ChatScreen = () => {
       const details = await ChatAPI.loadAgentConfig(agentId);
       if (details) {
         setAgentDetails(details);
-      }
-      // Strict ownership compute using service encapsulation
-      try {
-        const owned = await ChatAPI.isAgentOwned(agentId);
-        setIsOwned(owned);
-      } catch {
-        // On any error, be conservative: treat as non-owned (hide UI)
-        setIsOwned(false);
       }
     } catch (error) {
       console.log('❌ Agent Config Load Error:', error);
@@ -174,15 +164,26 @@ const ChatScreen = () => {
     }
   };
 
-  const loadAvailableModels = async () => {
+  const checkAgentOwnership = async () => {
     try {
-      const models = await ChatAPI.getAvailableModels();
-      setAvailableModels(models);
+      const isOwned = await ChatAPI.isAgentOwnedByUser(agentId);
+      console.log('🔍 [ChatScreen] Agent is owned by user:', isOwned);
+      setShowModelSwitch(isOwned);
+      
+      // Only load models if agent is owned by user
+      if (isOwned) {
+        const models = await ChatAPI.getAvailableModels();
+        setAvailableModels(models);
+      }
     } catch (error) {
-      console.log('❌ Error loading available models:', error);
-      setAvailableModels([]);
+      console.error('🚨 [ChatScreen] Error checking agent ownership:', error);
+      setShowModelSwitch(false); // Hide model switch on error
     }
   };
+
+  useEffect(() => {
+    checkAgentOwnership();
+  }, [agentId]);
 
   const switchToThread = async (thread: ChatThread) => {
     try {
@@ -584,17 +585,10 @@ const ChatScreen = () => {
   };
 
   const toggleModelDropdownWithOwnership = async () => {
-    if (updatingModel || ownershipChecking) return;
+    if (updatingModel) return;
     try {
-      setOwnershipChecking(true);
-      console.log(' [ModelSwitch:UI] toggle dropdown for agentId:', agentId, 'isOwned:', isOwned);
-      if (!isOwned) {
-        Alert.alert('Model Update', "You can only modify agents that you own. Try creating a new assistant or use 'My Assistant'.");
-        return;
-      }
       setShowModelDropdown(prev => !prev);
     } finally {
-      setOwnershipChecking(false);
     }
   };
 
@@ -640,13 +634,13 @@ const ChatScreen = () => {
         <View style={styles.headerSpacer} />
 
         {/* Model button (visible only for owned agents) */}
-        {isOwned && (
+        {showModelSwitch && (
           <TouchableOpacity 
             style={styles.modelButton}
             onPress={toggleModelDropdownWithOwnership}
-            disabled={updatingModel || ownershipChecking}
+            disabled={updatingModel}
           >
-            {updatingModel || ownershipChecking ? (
+            {updatingModel ? (
               <ActivityIndicator size="small" color="#f9fafb" />
             ) : (
               <Text style={styles.modelButtonText} numberOfLines={1}>
@@ -665,7 +659,7 @@ const ChatScreen = () => {
       </View>
 
       {/* Models dropdown (only for owned agents) */}
-      {isOwned && showModelDropdown && (
+      {showModelSwitch && showModelDropdown && (
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setShowModelDropdown(false)}
