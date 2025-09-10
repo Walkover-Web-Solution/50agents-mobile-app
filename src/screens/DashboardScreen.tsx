@@ -29,6 +29,9 @@ import { dashboardStyles as styles } from '../styles/DashboardScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { OrganizationService } from '../services/organizationService';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Feather from 'react-native-vector-icons/Feather';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 type DashboardRouteProp = RouteProp<RootStackParamList, 'Dashboard'>;
@@ -101,7 +104,7 @@ const DashboardScreen = () => {
       // organizationId should be passed as orgId parameter in request body, not in URL
       const apiCompanyId = '870623'; // Main company ID for API URL (stable)
       const userId = '36jowpr17'; // Main user ID for API URL (stable)
-      const targetOrgId = organizationId; // This goes in request body as orgId parameter
+      const targetOrgId = organizationId; // This goes in request body as orgIarameter
 
       
       if (orgAgentMap) {
@@ -205,7 +208,7 @@ const DashboardScreen = () => {
         }
       }
       return out;
-    } catch {
+    } catch { 
       return [];
     }
   };
@@ -322,7 +325,7 @@ const DashboardScreen = () => {
             style={styles.dropdownButton}
             onPress={() => setDropdownVisible(!dropdownVisible)}
           >
-            <Text style={styles.dropdownArrow}>︙</Text>
+            <Entypo name="dots-three-vertical" color="#ffffff" size={22} />
           </TouchableOpacity>
         </View>
         <Text style={styles.subtitle}>
@@ -359,7 +362,7 @@ const DashboardScreen = () => {
                 setMembersModalVisible(true);
               }}
             >
-              <Text style={styles.bottomSheetItemIcon}>👥</Text>
+              <Ionicons name="people" style={styles.bottomSheetItemIcon} />
               <Text style={styles.bottomSheetItemText}>Members</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -369,7 +372,7 @@ const DashboardScreen = () => {
                 setCreateOrgModalVisible(true);
               }}
             >
-              <Text style={styles.bottomSheetItemIcon}>＋</Text>
+              <Feather name="plus" style={styles.bottomSheetItemIcon} />
               <Text style={styles.bottomSheetItemText}>Create Org</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -397,7 +400,7 @@ const DashboardScreen = () => {
                 );
               }}
             >
-              <Text style={styles.bottomSheetItemIcon}>↪</Text>
+              <Feather name="log-out" color="#ff6b6b" style={styles.bottomSheetItemIcon} />
               <Text style={[styles.bottomSheetItemText, { color: '#ff6b6b' }]}>Logout</Text>
             </TouchableOpacity>
           </View>
@@ -416,7 +419,7 @@ const DashboardScreen = () => {
 
       <FlatList
         data={filteredAgents}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => item?._id ? `agent_${item._id}` : `fallback_${index}`}
         renderItem={renderAgent}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -524,7 +527,7 @@ const DashboardScreen = () => {
             {inviteResults.length > 0 && (
               <View style={styles.memberList}>
                 {inviteResults.map((u, idx) => (
-                  <View key={`${u.email}-${idx}`} style={styles.memberRow}>
+                  <View key={u.email || `${u.name || 'user'}-${idx}`} style={styles.memberRow}>
                     <Text style={styles.memberName}>{u.name}</Text>
                     <Text style={styles.memberEmail}>{u.email}</Text>
                   </View>
@@ -588,7 +591,7 @@ const DashboardScreen = () => {
             />
            <TextInput
   style={[styles.modalInput, styles.textAreaInput]}
-  placeholder="Assistant instructions "
+  placeholder="Assistant Discription "
   placeholderTextColor="#666"
   value={assistantInstructions}
   onChangeText={(t) => {
@@ -641,7 +644,7 @@ const DashboardScreen = () => {
         }}
         activeOpacity={0.8}
       >
-        <Text style={styles.floatingButtonIcon}>+</Text>
+        <Entypo name="plus" size={28} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>
   );

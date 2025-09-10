@@ -26,7 +26,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
       setLoading(true);
       setError('');
       
-      console.log(' Fetching organizations...');
+      
 
       // Call service which returns Company[] directly
       const organizationList = await OrganizationService.getOrganizations();
@@ -108,6 +108,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  
   if (loading) {
     return (
       <View style={styles.container}>
@@ -177,6 +178,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
       )}
+      
     </View>
   );
 };

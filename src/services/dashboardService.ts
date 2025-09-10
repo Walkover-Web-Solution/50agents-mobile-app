@@ -1,5 +1,6 @@
 import api from '../api/axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ChatAPI } from './chatApi';
 
 // Agent interface
 export interface Agent {
@@ -129,7 +130,7 @@ export class DashboardService {
 
   /**
    * Process agents to separate My Assistant from custom agents
-   * My Assistant is either named "AI Assistant" or matches current user's name
+   * My Assistant is either named "AI Assistant" or matches current user's name AND is owned by user
    */
   static async processAgentsForDisplay(agents: Agent[]): Promise<{ myAssistant: Agent | null; customAgents: Agent[] }> {
     const allAgents = [...agents];
@@ -148,21 +149,33 @@ export class DashboardService {
     let myAssistant: Agent | null = null;
     const customAgents: Agent[] = [];
     
-    // Check if there's already a "My Assistant" type agent
-    const existingAssistant = allAgents.find(agent => 
+    // Check if there's already a "My Assistant" type agent that is OWNED by user
+    const potentialAssistants = allAgents.filter(agent => 
       agent.name.toLowerCase() === 'ai assistant' ||
       agent.name.toLowerCase() === 'my assistant' ||
       agent.name.toLowerCase() === 'assistant' ||
       (currentUserName && agent.name.toLowerCase() === currentUserName.toLowerCase()) // Dynamic user name match
     );
     
+    // From potential assistants, find the one that is owned by user
+    let existingAssistant: Agent | null = null;
+    for (const agent of potentialAssistants) {
+      const isOwned = await ChatAPI.isAgentOwned(agent._id);
+      console.log(`🔍 Checking ownership for "${agent.name}" (${agent._id}): ${isOwned ? '✅ OWNED' : '❌ NOT OWNED'}`);
+      
+      if (isOwned) {
+        existingAssistant = agent;
+        break; // Use first owned assistant found
+      }
+    }
+    
     if (existingAssistant) {
-      // Use the actual AI Assistant
+      // Use the actual AI Assistant that is owned by user
       myAssistant = {
         ...existingAssistant,
         name: 'My Assistant' // Always display as "My Assistant" in dashboard
       };
-      console.log('✅ Found AI Assistant:', existingAssistant.name, 'ID:', existingAssistant._id);
+      console.log('✅ Found OWNED AI Assistant:', existingAssistant.name, 'ID:', existingAssistant._id);
       
       // All other agents are custom agents with their original names
       allAgents.forEach(agent => {
@@ -171,14 +184,13 @@ export class DashboardService {
         }
       });
     } else {
-      // If no AI Assistant exists, don't create fake My Assistant
-      // This should not happen in normal cases as AI Assistant is default
-      console.log('❌ No AI Assistant found in this organization');
+      // If no owned AI Assistant exists, don't create fake My Assistant
+      console.log('❌ No OWNED AI Assistant found in this organization');
       myAssistant = null;
       // All agents remain as custom agents
       customAgents.push(...allAgents);
     }
-    
+
     // Sort custom agents to show owner's default agent first, then alphabetical
     customAgents.sort((a, b) => {
       // Owner's agent has ownerName or createdBy property (from API)

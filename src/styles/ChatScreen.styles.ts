@@ -63,6 +63,7 @@ export const chatStyles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
     marginVertical: 8,
+    width: '100%',
   },
   userHeader: {
     flexDirection: 'row',
@@ -91,12 +92,14 @@ export const chatStyles = StyleSheet.create({
   },
   userBubble: {
     backgroundColor: '#2563eb',
-    paddingVertical: 1,
-    paddingHorizontal: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 18,
-    maxWidth: '85%',
+    maxWidth: '80%',
     justifyContent: 'center',
     minHeight: 38,
+    alignSelf: 'flex-end',
+    marginLeft: 20,
   },
   userMessageText: {
     fontSize: 16,
@@ -111,6 +114,7 @@ export const chatStyles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     marginVertical: 8,
+    width: '100%',
   },
   agentHeader: {
     flexDirection: 'row',
@@ -139,12 +143,14 @@ export const chatStyles = StyleSheet.create({
   },
   agentBubble: {
     backgroundColor: '#374151',
-    paddingVertical: 1,
-    paddingHorizontal: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 18,
-    maxWidth: '85%',
+    maxWidth: '80%',
     justifyContent: 'center',
     minHeight: 38,
+    alignSelf: 'flex-start',
+    marginRight: 20,
   },
   agentMessageText: {
     fontSize: 16,
@@ -155,7 +161,7 @@ export const chatStyles = StyleSheet.create({
     }),
   },
   inputContainer: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 0,
     paddingTop: 25,
     paddingBottom: 15,
     backgroundColor: '#212121',
@@ -167,7 +173,7 @@ export const chatStyles = StyleSheet.create({
     backgroundColor: '#374151',
     borderRadius: 24,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     marginBottom: 0,
     minHeight: 48,
     marginHorizontal: 0,
@@ -624,8 +630,20 @@ export const chatStyles = StyleSheet.create({
 // Markdown theme for react-native-markdown-display
 // Ensures readable typography on dark bubbles and supports headings, lists, bold/italic, code, etc.
 export const markdownTheme = {
-  body: { color: '#e5e7eb', fontSize: 15, lineHeight: 22 },
-  paragraph: { color: '#e5e7eb' },
+  body: { 
+    color: '#e5e7eb', 
+    fontSize: 15, 
+    lineHeight: 22,
+    width: '100%',
+    flexShrink: 1,
+    flexWrap: 'wrap'
+  },
+  paragraph: { 
+    color: '#e5e7eb',
+    width: '100%',
+    flexShrink: 1,
+    flexWrap: 'wrap'
+  },
 
   heading1: { color: '#22d3ee', fontSize: 22, fontWeight: '800', marginBottom: 8 },   // Cyan
   heading2: { color: '#a78bfa', fontSize: 19, fontWeight: '800', marginBottom: 6 },   // Violet
@@ -638,9 +656,22 @@ export const markdownTheme = {
   em: { fontStyle: 'italic', color: '#f472b6' },
   link: { color: '#38bdf8', textDecorationLine: 'underline' },
 
-  bullet_list: { color: '#c4b5fd' },
-  ordered_list: { color: '#93c5fd' },
-  list_item: { color: '#e5e7eb' },
+  bullet_list: { 
+    color: '#c4b5fd',
+    width: '100%',
+    flexShrink: 1
+  },
+  ordered_list: { 
+    color: '#93c5fd',
+    width: '100%',
+    flexShrink: 1
+  },
+  list_item: { 
+    color: '#e5e7eb',
+    width: '100%',
+    flexShrink: 1,
+    flexWrap: 'wrap'
+  },
 
   blockquote: {
     backgroundColor: 'rgba(245, 158, 11, 0.08)', // amber tint
@@ -649,6 +680,8 @@ export const markdownTheme = {
     paddingLeft: 12,
     paddingVertical: 8,
     color: '#f3f4f6',
+    width: '100%',
+    flexShrink: 1,
   },
 
   code_inline: {
@@ -659,6 +692,7 @@ export const markdownTheme = {
     paddingVertical: 3,
     borderWidth: 1,
     borderColor: '#334155',
+    flexWrap: 'wrap',
   },
 
   fence: {
@@ -669,6 +703,8 @@ export const markdownTheme = {
     marginVertical: 6,
     borderLeftWidth: 4,
     borderLeftColor: '#22d3ee', // cyan accent bar
+    width: '100%',
+    flexShrink: 1,
   },
 
   hr: { backgroundColor: '#334155', height: 1 },

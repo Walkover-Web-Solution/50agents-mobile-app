@@ -29,7 +29,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserEmail } from '../utils/auth';
 import Markdown from 'react-native-markdown-display';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-
+import Entypo from 'react-native-vector-icons/Entypo';
+import Octicons from 'react-native-vector-icons/Octicons';
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
@@ -654,7 +655,7 @@ const ChatScreen = () => {
           style={styles.threadsButton}
           onPress={() => setShowThreadsList(true)}
         >
-          <Text style={styles.threadsIcon}>≡</Text>
+           <Octicons name="three-bars" color="#fff" size={22} />
         </TouchableOpacity>
       </View>
 
@@ -738,7 +739,7 @@ const ChatScreen = () => {
               {sendingMessage ? (
                 <ActivityIndicator size="small" color="#6b7280" />
               ) : (
-                <Text style={styles.sendIcon}>→</Text>
+                <AntDesign name="arrowright" size={18} color="#212121" />
               )}
             </TouchableOpacity>
           </View>
@@ -766,7 +767,7 @@ const ChatScreen = () => {
               style={styles.closeButton}
               onPress={() => setShowThreadsList(false)}
             >
-              <Text style={styles.closeIcon}>×</Text>
+                <Entypo name="cross" color="#fff" size={24} />
             </TouchableOpacity>
           </View> 
             
@@ -790,7 +791,7 @@ const ChatScreen = () => {
             style={styles.newThreadButton}
             onPress={createNewThread}
           >
-            <Text style={styles.newThreadIcon}>+</Text>
+             <AntDesign name="plus" color="#fff" size={16} />
             <Text style={styles.newThreadText}>New Conversation</Text>
           </TouchableOpacity>
         </Animated.View>
