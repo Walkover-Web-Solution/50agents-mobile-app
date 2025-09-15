@@ -92,7 +92,7 @@ export class ChatAPI {
         
         // Convert server messages to app format
         const loadedMessages: Message[] = serverMessages.map((msg: any, index: number) => ({
-          id: msg.id?.toString() || `msg_${index}`,
+          id: msg.id?.toString() ? `server_${msg.id}_${index}` : `loaded_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
           text: msg.content || '',
           isUser: msg.role === 'user',
           timestamp: new Date(msg.createdAt)
@@ -230,8 +230,8 @@ export class ChatAPI {
         const serverThreads = response.data.data.threads;
         
         // Convert server threads to ChatThread format
-        const chatThreads: ChatThread[] = serverThreads.map((serverThread: any) => ({
-          tid: serverThread.middleware_id, // Use middleware_id as thread ID
+        const chatThreads: ChatThread[] = serverThreads.map((serverThread: any, index: number) => ({
+          tid: serverThread.middleware_id || `thread_${serverThread._id}_${index}` || `fallback_thread_${Date.now()}_${index}`,
           threadName: serverThread.name,   // Thread name from server
           agentId: agentId,
           createdAt: new Date(serverThread.createdAt),
@@ -341,7 +341,7 @@ export class ChatAPI {
       try {
         const user = await this.getCurrentUser();
         currentUserId = String(user?._id || '').trim();
-      } catch (_) {
+      } catch (_) {``
         currentUserId = null;
       }
 

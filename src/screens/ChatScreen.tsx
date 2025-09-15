@@ -90,12 +90,11 @@ const ChatScreen = () => {
       if (email) {
         // Extract name from email (before @)
         const namePart = email.split('@')[0];
-        console.log('👤 Name part:', namePart);
         
-        // For emails like "kartikshrivastav2004@gmail.com"
-        // Remove numbers and extract meaningful name parts
+        
+        
         const cleanName = namePart.replace(/\d+/g, ''); // Remove numbers
-        console.log('🧹 Clean name:', cleanName);
+      
         
         // Try different splitting strategies
         let initials = '';
@@ -107,8 +106,7 @@ const ChatScreen = () => {
         }
         // Strategy 2: For concatenated names like "kartikshrivastav"
         else if (cleanName.length >= 6) {
-          // Split at 40% to catch end of first name
-          // "kartikshrivastav" → split at position 6 → "kartik|shrivastav" → "K" + "S"
+        
           const splitPoint = Math.floor(cleanName.length * 0.4);
           
           const firstInitial = cleanName.charAt(0).toUpperCase();
@@ -194,7 +192,7 @@ const ChatScreen = () => {
       // If thread already has messages, use them, otherwise load from server
       if (thread.messages && thread.messages.length > 0) {
         setMessages(thread.messages);
-      } else {
+      } else {  
         setMessages([]); // Clear current messages while loading
         
         // Load thread messages from server API

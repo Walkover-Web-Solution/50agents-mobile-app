@@ -122,7 +122,7 @@ const DashboardScreen = () => {
 
       // Update state
       setMyAssistant(processedMyAssistant);
-      setAgents(filteredAgents);
+      setAgents(filteredAgents);  
 
       console.log(' [UI] Dashboard data loaded successfully');
 
