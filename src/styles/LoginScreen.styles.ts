@@ -8,6 +8,17 @@ export const loginStyles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#ffffff', // White background
   },
+  contentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
+  buttonContainer: {
+    width: '100%',
+    maxWidth: 300,
+    alignItems: 'center',
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',

@@ -17,10 +17,10 @@
 		32BE5B6CC0B9469D95FA8BCA /* Foundation.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3443F311335C48A592BF1D41 /* Foundation.ttf */; };
 		39246DC060934C17BC4B3858 /* Feather.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4366955DF82041838916252C /* Feather.ttf */; };
 		69B2079CB5264DE094627227 /* FontAwesome6_Solid.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2E13DC178C95426781F78A5C /* FontAwesome6_Solid.ttf */; };
-		6DB6AE61C4B1274D2789E086 /* libPods-FiftyAgents.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 43911FD66DFA1A52D7A02EDD /* libPods-FiftyAgents.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		87CD99896F0F40699F65014B /* Ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 704B2EFB3E1E4E8487C86AB2 /* Ionicons.ttf */; };
+		9CCD6E43738AEB31F91D508A /* libPods-FiftyAgents.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B7D192B546AFAE8D10D8F67 /* libPods-FiftyAgents.a */; };
 		A595A38849C24B399692D55A /* Entypo.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5DEC7B6AADA84EFC8B0F530B /* Entypo.ttf */; };
 		B2C02D836E7A4DA2A09CD538 /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CA4CA777B5334E42B58549A5 /* SimpleLineIcons.ttf */; };
 		C7F680C9EF9E47B09C0B910E /* FontAwesome5_Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0270BB4E6F1943EBBD923B89 /* FontAwesome5_Regular.ttf */; };
@@ -37,6 +37,7 @@
 		0270BB4E6F1943EBBD923B89 /* FontAwesome5_Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Regular.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Regular.ttf"; sourceTree = "<group>"; };
 		0A86FE59B58646C3A86A4483 /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Brands.ttf"; sourceTree = "<group>"; };
 		0D648F64DFD544E09B5194D2 /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
+		12AC8398B105E6AE63AE805D /* Pods-FiftyAgents.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FiftyAgents.debug.xcconfig"; path = "Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* FiftyAgents.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FiftyAgents.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FiftyAgents/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FiftyAgents/Info.plist; sourceTree = "<group>"; };
@@ -44,9 +45,9 @@
 		1A298006419D499489B3827E /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"; sourceTree = "<group>"; };
 		2E13DC178C95426781F78A5C /* FontAwesome6_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Solid.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome6_Solid.ttf"; sourceTree = "<group>"; };
 		3443F311335C48A592BF1D41 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
-		401CFD2E6523F917A1F0F256 /* Pods-FiftyAgents.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FiftyAgents.debug.xcconfig"; path = "Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents.debug.xcconfig"; sourceTree = "<group>"; };
+		36660A17034AA8272D97B3EB /* Pods-FiftyAgents.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FiftyAgents.release.xcconfig"; path = "Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents.release.xcconfig"; sourceTree = "<group>"; };
+		3B7D192B546AFAE8D10D8F67 /* libPods-FiftyAgents.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FiftyAgents.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4366955DF82041838916252C /* Feather.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Feather.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Feather.ttf"; sourceTree = "<group>"; };
-		43911FD66DFA1A52D7A02EDD /* libPods-FiftyAgents.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FiftyAgents.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D953B32222B49C294BB4032 /* Zocial.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Zocial.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Zocial.ttf"; sourceTree = "<group>"; };
 		5DEC7B6AADA84EFC8B0F530B /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
 		6348EA1ECBDE45EE97AB4311 /* MaterialIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialIcons.ttf"; sourceTree = "<group>"; };
@@ -56,7 +57,6 @@
 		79EDCD14A21A4677844FB6A6 /* Octicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Octicons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Octicons.ttf"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = FiftyAgents/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8D840E68724649DAA6FDC5CE /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/EvilIcons.ttf"; sourceTree = "<group>"; };
-		90E06EB8F0BEC81C944DE1AF /* Pods-FiftyAgents.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FiftyAgents.release.xcconfig"; path = "Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents.release.xcconfig"; sourceTree = "<group>"; };
 		AACAB6F3C91747F8B3EB9AB1 /* AntDesign.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = AntDesign.ttf; path = "../node_modules/react-native-vector-icons/Fonts/AntDesign.ttf"; sourceTree = "<group>"; };
 		CA4CA777B5334E42B58549A5 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SimpleLineIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; };
 		CE082D694EEE482A93D80EFD /* FontAwesome6_Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome6_Regular.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome6_Regular.ttf"; sourceTree = "<group>"; };
@@ -70,7 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6DB6AE61C4B1274D2789E086 /* libPods-FiftyAgents.a in Frameworks */,
+				9CCD6E43738AEB31F91D508A /* libPods-FiftyAgents.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,7 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				43911FD66DFA1A52D7A02EDD /* libPods-FiftyAgents.a */,
+				3B7D192B546AFAE8D10D8F67 /* libPods-FiftyAgents.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -157,8 +157,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				401CFD2E6523F917A1F0F256 /* Pods-FiftyAgents.debug.xcconfig */,
-				90E06EB8F0BEC81C944DE1AF /* Pods-FiftyAgents.release.xcconfig */,
+				12AC8398B105E6AE63AE805D /* Pods-FiftyAgents.debug.xcconfig */,
+				36660A17034AA8272D97B3EB /* Pods-FiftyAgents.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -170,13 +170,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "FiftyAgents" */;
 			buildPhases = (
-				C292E66F1B88D71170B562C6 /* [CP] Check Pods Manifest.lock */,
+				4317FEEA3EA9BF9AF2C09ECA /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				8FCCF163095E30B9B238B2DF /* [CP] Embed Pods Frameworks */,
-				C45842CAE3AB3D83F562F455 /* [CP] Copy Pods Resources */,
+				1DC25ED5B2757F70CB9768C2 /* [CP] Embed Pods Frameworks */,
+				E2C1BF437A1D79EA40C906B1 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -267,7 +267,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		8FCCF163095E30B9B238B2DF /* [CP] Embed Pods Frameworks */ = {
+		1DC25ED5B2757F70CB9768C2 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -275,20 +275,16 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C292E66F1B88D71170B562C6 /* [CP] Check Pods Manifest.lock */ = {
+		4317FEEA3EA9BF9AF2C09ECA /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -310,7 +306,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C45842CAE3AB3D83F562F455 /* [CP] Copy Pods Resources */ = {
+		E2C1BF437A1D79EA40C906B1 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -318,13 +314,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-FiftyAgents/Pods-FiftyAgents-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -347,7 +339,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 401CFD2E6523F917A1F0F256 /* Pods-FiftyAgents.debug.xcconfig */;
+			baseConfigurationReference = 12AC8398B105E6AE63AE805D /* Pods-FiftyAgents.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -378,7 +370,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 90E06EB8F0BEC81C944DE1AF /* Pods-FiftyAgents.release.xcconfig */;
+			baseConfigurationReference = 36660A17034AA8272D97B3EB /* Pods-FiftyAgents.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -474,7 +466,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -543,7 +538,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

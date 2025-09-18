@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveOrgId } from '../utils/auth';
+import { saveOrgId, logout } from '../utils/auth';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import OrganizationService from '../services/organizationService';
@@ -9,7 +9,7 @@ import { Company } from '../types/api';
 import { getProxyAuthToken } from '../utils/auth';
 import { CONFIG } from '../config';
 import { organizationStyles as styles } from '../styles/OrganizationSelectionScreen.styles';
-
+import Feather from 'react-native-vector-icons/Feather';
 type Props = NativeStackScreenProps<RootStackParamList, 'OrganizationSelection'>;
 
 const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
@@ -97,7 +97,6 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
   // Logout when user taps Retry on error state
   const handleRetryLogout = async (): Promise<void> => {
     try {
-      const { logout } = require('../utils/auth');
       await logout();
       navigation.reset({
         index: 0,
@@ -108,6 +107,30 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  const handleLogout = async (): Promise<void> => {
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+            } finally {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }]
+              });
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
   
   if (loading) {
     return (
@@ -179,6 +202,15 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
       
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Feather name="log-out" size={18} color="#ff6b6b" />
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };

@@ -110,19 +110,23 @@ export const organizationStyles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: CONFIG.APP.ORGANIZATION_COLORS.logoutButtonColor, 
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 8,
     marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoutButtonText: {
-    color: CONFIG.APP.ORGANIZATION_COLORS.logoutButtonTextColor, 
+    color: '#ff6b6b',
     fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
+    marginLeft: 8,
   },
   bottomContainer: {
     padding: 10,
     paddingBottom: 14,
+    alignItems: 'center',
   },
 });
