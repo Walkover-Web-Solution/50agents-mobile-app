@@ -114,7 +114,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={CONFIG.APP.ORGANIZATION_COLORS.arrowColor} />
-          <Text style={styles.loadingText}>Loading organizations...</Text>
+          <Text style={styles.loadingText}>Loading Dashboard...</Text>
         </View>
       </View>
     );
