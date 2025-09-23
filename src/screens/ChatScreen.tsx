@@ -515,7 +515,7 @@ const ChatScreen = () => {
               const updatedThreads = allThreads.filter(thread => thread.tid !== threadId);
               setAllThreads(updatedThreads);
               if (currentThreadId === threadId) {
-                setCurrentThreadId(null);
+                setCurrentThreadId(null);  
                 setMessages([]);
               }
             } catch (error) {

@@ -24,17 +24,28 @@ const LoginScreen = () => {
   
   const handleLoginSuccess = async (data: any) => {
     // Log raw response for debugging/verification
-    console.log('🔍 LOGIN SCREEN TEST');
+    console.log('🔍 LOGIN SCREEN TEST - Apple Sign-In Success');
     try {
-      console.log(' Proxy Login Success - Raw Response:', JSON.stringify(data, null, 2));
+      console.log('📍 Apple Login Success - Raw Response:', JSON.stringify(data, null, 2));
     } catch {
-      console.log(' Proxy Login Success - Raw Response (non-JSON)');
+      console.log('📍 Apple Login Success - Raw Response (non-JSON):', data);
     }
 
     try {
-      // Expected shape from proxy package: data.data.proxy_auth_token (and possibly data.data.email)
-      const token: string | undefined = data?.data?.proxy_auth_token || data?.proxy_auth_token;
-      const email: string | undefined = data?.data?.email || data?.email;
+      // Multiple token extraction patterns for Apple Sign-In
+      const token: string | undefined = 
+        data?.data?.proxy_auth_token || 
+        data?.proxy_auth_token ||
+        data?.token ||
+        data?.data?.token ||
+        data?.authToken ||
+        data?.data?.authToken;
+      
+      const email: string | undefined = 
+        data?.data?.email || 
+        data?.email ||
+        data?.user?.email ||
+        data?.data?.user?.email;
 
       console.log(' Extracted token present:', !!token);
       console.log(' Extracted email:', email || 'not provided');
@@ -71,7 +82,7 @@ const LoginScreen = () => {
       Alert.alert('Login Failed', 'Could not save session. Please try again.');
     }
   };
-
+                                                                                                                                                                
   const handleLoginFailure = (error: any) => {
     try {
       console.log(' Proxy Login Failure:', JSON.stringify(error, null, 2));

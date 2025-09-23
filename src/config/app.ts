@@ -14,7 +14,7 @@ export const APP_CONFIG = {
   DEFAULTS: {
    
     USER_ID: '1', // TODO: Make dynamic based on logged-in user
-    REFERENCE_ID: '870623b1736406370677f756255301',
+    REFERENCE_ID: '870623a1697443499652ceeab330e5',
     WIDGET_ID: '35686b68546b393235393432',
     AUTH_TOKEN: '342616T1r2IIwzQgf68a6bf7eP1',
   },

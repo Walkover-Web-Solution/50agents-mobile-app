@@ -15,7 +15,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [initialRoute, setInitialRoute] = useState<keyof RootStackParamList>('Login');
 
   useEffect(() => {
@@ -44,9 +44,20 @@ function App() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' }}>
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: '#1a1a1a' 
+      }}>
         <ActivityIndicator size="large" color="#1a73e8" />
-        <Text style={{ color: '#fff', marginTop: 10, fontSize: 16 }}>Loading...</Text>
+        <Text style={{ 
+          color: '#fff', 
+          marginTop: 10, 
+          fontSize: 16 
+        }}>
+          Loading...
+        </Text>
       </View>
     );
   }
