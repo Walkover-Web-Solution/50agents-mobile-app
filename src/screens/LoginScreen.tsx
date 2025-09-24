@@ -13,7 +13,7 @@ import { RootStackParamList } from '../types/navigation';
 import { CONFIG } from '../config';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { saveProxyAuthToken, saveUserEmail, saveToken } from '../utils/auth';
-import { ShowProxyAuth } from '@msg91comm/react-native-36blocks-proxy';
+import { ShowProxyAuth } from '../react-native-proxy/src';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
