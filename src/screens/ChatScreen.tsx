@@ -15,6 +15,7 @@ import {
   Alert,
   Keyboard,
   StatusBar,
+  Clipboard,
 } from 'react-native';
 import {
   useNavigation, useRoute, RouteProp
@@ -29,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserEmail } from '../utils/auth';
 import Markdown from 'react-native-markdown-display';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import Feather from 'react-native-vector-icons/Feather';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Octicons from 'react-native-vector-icons/Octicons';
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
@@ -58,6 +60,27 @@ const ChatScreen = () => {
   const [showModelSwitch, setShowModelSwitch] = useState(false);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [updatingModel, setUpdatingModel] = useState(false);
+  const [showSettingsButton, setShowSettingsButton] = useState(false); 
+  // Settings state
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ name: '', instructions: '', slugName: '' });
+  const [updatingAgent, setUpdatingAgent] = useState(false);
+
+  // Settings modal gesture handling
+  const settingsPanResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      // Optional: Add visual feedback during swipe
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 50 && gestureState.vy > 0.5) {
+        // Swipe down detected - close modal
+        closeSettingsModal();
+      }
+    },
+  });
 
   // Phase 1: Agent Config Loading (UI Bootstrap)
   useEffect(() => {
@@ -168,7 +191,7 @@ const ChatScreen = () => {
       const isOwned = await ChatAPI.isAgentOwnedByUser(agentId);
       console.log('🔍 [ChatScreen] Agent is owned by user:', isOwned);
       setShowModelSwitch(isOwned);
-      
+      setShowSettingsButton(isOwned);
       // Only load models if agent is owned by user
       if (isOwned) {
         const models = await ChatAPI.getAvailableModels();
@@ -177,6 +200,7 @@ const ChatScreen = () => {
     } catch (error) {
       console.error('🚨 [ChatScreen] Error checking agent ownership:', error);
       setShowModelSwitch(false); // Hide model switch on error
+      setShowSettingsButton(false);
     }
   };
 
@@ -566,29 +590,119 @@ const ChatScreen = () => {
   const currentModelLabel = agentDetails?.llm?.model || 'Model';
 
   const handleModelSelect = async (option: ModelOption) => {
+    setShowModelDropdown(false);
+    
+    if (!agentDetails) return;
+    
+    // Don't update if it's the same model
+    if (agentDetails.llm?.service === option.service && agentDetails.llm?.model === option.id) {
+      return;
+    }
+    
+    setUpdatingModel(true);
+    
     try {
-      console.log(' [ModelSwitch:UI] onSelect ->', { agentId, option });
-      setUpdatingModel(true);
-      const resp = await ChatAPI.updateAgentModel(agentId, option.id, option.service);
-      if (resp.success) {
-        setAgentDetails(prev => prev ? ({ ...prev, llm: { service: option.service, model: option.id } }) : prev);
-        setShowModelDropdown(false);
+      const success = await ChatAPI.updateAgentModel(agentId, option.service, option.id);
+      
+      if (success) {
+        // Update local agent details
+        setAgentDetails(prev => prev ? {
+          ...prev,
+          llm: {
+            service: option.service,
+            model: option.id
+          }
+        } : prev);
+        
+        console.log('✅ [ChatScreen] Model updated successfully');
       } else {
-        Alert.alert('Model Update', resp.message || 'Unable to update model.');
+        Alert.alert('Error', 'Failed to update model. Please try again.');
       }
-    } catch (e) {
-      Alert.alert('Model Update', 'Failed to update the model.');
+    } catch (error: any) {
+      console.error('❌ [ChatScreen] Model update failed:', error);
+      Alert.alert('Error', error.message || 'Failed to update model. Please try again.');
     } finally {
       setUpdatingModel(false);
     }
   };
 
-  const toggleModelDropdownWithOwnership = async () => {
-    if (updatingModel) return;
+  const openSettingsModal = () => {
+    if (!agentDetails) return;
+    
+    // Populate form with current agent data
+    setSettingsForm({
+      name: agentDetails.name || '',
+      instructions: agentDetails.instructions || '',
+      slugName: agentDetails.slugName || ''
+    });
+    setShowSettingsModal(true);
+  };
+
+  const closeSettingsModal = () => {
+    setShowSettingsModal(false);
+    setSettingsForm({ name: '', instructions: '', slugName: '' });
+  };
+
+  const handleSaveSettings = async () => {
+    if (!agentDetails) return;
+    
+    setUpdatingAgent(true);
+    
     try {
-      setShowModelDropdown(prev => !prev);
+      const updates: { name?: string; instructions?: string; slugName?: string } = {};
+      
+      // Only include changed fields
+      if (settingsForm.name !== agentDetails.name) {
+        updates.name = settingsForm.name;
+      }
+      if (settingsForm.instructions !== agentDetails.instructions) {
+        updates.instructions = settingsForm.instructions;
+      }
+      if (settingsForm.slugName !== agentDetails.slugName) {
+        updates.slugName = settingsForm.slugName;
+      }
+      
+      // If no changes, just return
+      if (Object.keys(updates).length === 0) {
+        setUpdatingAgent(false);
+        return;
+      }
+      
+      const success = await ChatAPI.updateAgent(agentId, updates);
+      
+      if (success) {
+        // Update local agent details
+        setAgentDetails(prev => prev ? {
+          ...prev,
+          ...updates
+        } : prev);
+        
+        console.log('✅ [ChatScreen] Agent settings auto-saved successfully');
+      } else {
+        console.error('❌ [ChatScreen] Failed to auto-save agent settings');
+      }
+    } catch (error: any) {
+      console.error('❌ [ChatScreen] Settings auto-save failed:', error);
     } finally {
+      setUpdatingAgent(false);
     }
+  };
+
+  useEffect(() => {
+    if (!agentDetails || !settingsForm.name) return;
+    
+    const timeoutId = setTimeout(() => {
+      handleSaveSettings();
+    }, 1000); // Auto-save 1 second after user stops typing
+    
+    return () => clearTimeout(timeoutId);
+  }, [settingsForm.name, settingsForm.instructions, settingsForm.slugName]);
+
+  const copyEmailToClipboard = () => {
+    const fullEmail = `${settingsForm.slugName}@50agents.com`;
+    Clipboard.setString(fullEmail);
+   
+    console.log('✅ Email copied to clipboard:', fullEmail);
   };
 
   if (loading) {
@@ -636,7 +750,7 @@ const ChatScreen = () => {
         {showModelSwitch && (
           <TouchableOpacity 
             style={styles.modelButton}
-            onPress={toggleModelDropdownWithOwnership}
+            onPress={() => setShowModelDropdown(prev => !prev)}
             disabled={updatingModel}
           >
             {updatingModel ? (
@@ -646,6 +760,16 @@ const ChatScreen = () => {
                 {currentModelLabel}
               </Text>
             )}
+          </TouchableOpacity>
+        )}
+
+        {/* Settings button (visible only for owned agents) */}
+        {showModelSwitch && (
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={openSettingsModal}
+          >
+            <AntDesign name="setting" color="#f9fafb" size={18} />
           </TouchableOpacity>
         )}
 
@@ -793,6 +917,77 @@ const ChatScreen = () => {
             <Text style={styles.newThreadText}>New Conversation</Text>
           </TouchableOpacity>
         </Animated.View>
+      </Modal>
+
+      <Modal
+        visible={showSettingsModal}
+        animationType="slide"
+        presentationStyle="overFullScreen"
+        transparent={true}
+        onRequestClose={closeSettingsModal}
+      >
+        <TouchableOpacity 
+          style={styles.settingsModalBackdrop} 
+          activeOpacity={1}
+          onPress={closeSettingsModal}
+        >
+          <View style={styles.settingsModalContainer} {...settingsPanResponder.panHandlers}>
+            <View style={styles.settingsModalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Entypo name="cog" color="#fff" size={20} />
+                <Text style={styles.settingsModalTitle}>Settings</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={closeSettingsModal}
+              >
+                  <Entypo name="cross" color="#fff" size={24} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.settingsFormGroup}>
+              <Text style={styles.settingsLabel}>Assistant Name</Text>
+              <TextInput
+                style={styles.settingsInput}
+                value={settingsForm.name}
+                onChangeText={(text) => setSettingsForm(prev => ({ ...prev, name: text }))}
+                placeholder="Enter assistant name"
+                placeholderTextColor="#6b7280"
+              />
+            </View>
+            <View style={styles.settingsFormGroup}>
+              <Text style={styles.settingsLabel}>Email Address</Text>
+              <View style={styles.emailInputContainer}>
+                <TextInput
+                  style={styles.emailInput}
+                  value={settingsForm.slugName}
+                  onChangeText={(text) => setSettingsForm(prev => ({ ...prev, slugName: text }))}
+                  placeholder="Enter prefix"
+                  placeholderTextColor="#6b7280"
+                />
+                <Text style={styles.emailSuffix}>@50agents.com</Text>
+                <TouchableOpacity 
+                  style={styles.copyButton}
+                  onPress={copyEmailToClipboard}
+                >
+                  <Entypo name="copy" size={16} color="#9ca3af" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.settingsHelperText}>Only lowercase letters, numbers, and hyphens allowed</Text>
+            </View>
+            <View style={styles.settingsFormGroup}>
+              <Text style={styles.settingsLabel}>Instructions</Text>
+              <TextInput
+                style={styles.settingsTextArea}
+                value={settingsForm.instructions}
+                onChangeText={(text) => setSettingsForm(prev => ({ ...prev, instructions: text }))}
+                placeholder="Enter instructions for the assistant"
+                placeholderTextColor="#6b7280"
+                multiline
+                maxLength={1000}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </View>
   );

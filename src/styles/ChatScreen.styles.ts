@@ -165,7 +165,7 @@ export const chatStyles = StyleSheet.create({
     paddingTop: 25,
     paddingBottom: 15,
     backgroundColor: '#212121',
-    marginBottom: Platform.OS === 'android' ? 5 : 0, // Lift input bar slightly on Android
+    marginBottom: Platform.OS === 'android' ? 5 : 0,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -267,8 +267,7 @@ export const chatStyles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
     textAlign: 'center',
-    lineHeight: 26, // match backButton height to center arrow perfectly
-    // Android-specific tweaks for perfect vertical centering
+    lineHeight: 26,
     includeFontPadding: false as unknown as boolean,
     textAlignVertical: 'center' as any,
     transform: [{ translateY: Platform.OS === 'android' ? -0.5 : 0 }],
@@ -337,7 +336,7 @@ export const chatStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 18,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)', // blue tint
+    backgroundColor: 'rgba(37, 99, 235, 0.15)',
     marginRight: 4,
   },
   modelButtonText: {
@@ -370,7 +369,7 @@ export const chatStyles = StyleSheet.create({
   modelDropdown: {
     position: 'absolute',
     right: 12,
-    backgroundColor: '#111827', // darker panel
+    backgroundColor: '#111827',
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 8,
@@ -590,7 +589,6 @@ export const chatStyles = StyleSheet.create({
     marginVertical: 4,
     borderLeftWidth: 3,
     borderLeftColor: '#2563eb',
-    // Cross-platform shadow
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -609,7 +607,6 @@ export const chatStyles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     textTransform: 'uppercase',
-    // Platform-specific font
     fontFamily: Platform.select({
       ios: 'System',
       android: 'Roboto',
@@ -619,93 +616,275 @@ export const chatStyles = StyleSheet.create({
     fontSize: 14,
     color: '#e5e7eb',
     lineHeight: 20,
-    // Cross-platform monospace font
     fontFamily: Platform.select({
       ios: 'Courier New',
       android: 'monospace',
     }),
   },
+  settingsButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+  settingsModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsModalContent: {
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxHeight: '60%',
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#f9fafb',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  settingsOption: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  settingsOptionText: {
+    fontSize: 16,
+    color: '#f9fafb',
+  },
+  settingsModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsModalContainer: {
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  settingsModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#374151',
+  },
+  settingsModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#f9fafb',
+    marginLeft: 8,
+  },
+  settingsFormGroup: {
+    marginBottom: 16,
+  },
+  settingsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#f9fafb',
+    marginBottom: 8,
+  },
+  settingsInput: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#4b5563',
+  },
+  settingsTextArea: {
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#4b5563',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  emailInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4b5563',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  emailInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#ffffff',
+    paddingVertical: 0,
+  },
+  emailSuffix: {
+    fontSize: 16,
+    color: '#9ca3af',
+    marginLeft: 4,
+  },
+  copyButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  settingsHelperText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
 });
 
 // Markdown theme for react-native-markdown-display
-// Ensures readable typography on dark bubbles and supports headings, lists, bold/italic, code, etc.
 export const markdownTheme = {
-  body: { 
-    color: '#e5e7eb', 
-    fontSize: 15, 
-    lineHeight: 22,
-    width: '100%',
-    flexShrink: 1,
-    flexWrap: 'wrap'
-  },
-  paragraph: { 
+  body: {
     color: '#e5e7eb',
-    width: '100%',
-    flexShrink: 1,
-    flexWrap: 'wrap'
+    fontSize: 16,
+    lineHeight: 24,
   },
-
-  heading1: { color: '#22d3ee', fontSize: 22, fontWeight: '800', marginBottom: 8 },   // Cyan
-  heading2: { color: '#a78bfa', fontSize: 19, fontWeight: '800', marginBottom: 6 },   // Violet
-  heading3: { color: '#f59e0b', fontSize: 17, fontWeight: '700', marginBottom: 4 },   // Amber
-  heading4: { color: '#34d399', fontSize: 15, fontWeight: '700', marginBottom: 3 },   // Emerald
-  heading5: { color: '#f472b6', fontSize: 14, fontWeight: '700', marginBottom: 2 },   // Pink
-  heading6: { color: '#60a5fa', fontSize: 13, fontWeight: '700', marginBottom: 2 },   // Sky
-
-  strong: { fontWeight: '700', color: '#fefefe' },
-  em: { fontStyle: 'italic', color: '#f472b6' },
-  link: { color: '#38bdf8', textDecorationLine: 'underline' },
-
-  bullet_list: { 
-    color: '#c4b5fd',
-    width: '100%',
-    flexShrink: 1
+  heading1: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '600',
+    marginVertical: 16,
   },
-  ordered_list: { 
-    color: '#93c5fd',
-    width: '100%',
-    flexShrink: 1
+  heading2: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '600',
+    marginVertical: 14,
   },
-  list_item: { 
-    color: '#e5e7eb',
-    width: '100%',
-    flexShrink: 1,
-    flexWrap: 'wrap'
+  heading3: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginVertical: 12,
   },
-
-  blockquote: {
-    backgroundColor: 'rgba(245, 158, 11, 0.08)', // amber tint
-    borderLeftWidth: 4,
-    borderLeftColor: '#f59e0b',
-    paddingLeft: 12,
-    paddingVertical: 8,
-    color: '#f3f4f6',
-    width: '100%',
-    flexShrink: 1,
+  heading4: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginVertical: 10,
   },
-
-  code_inline: {
-    backgroundColor: '#0b1220',
-    color: '#e2e8f0',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: '#334155',
-    flexWrap: 'wrap',
+  heading5: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginVertical: 8,
   },
-
-  fence: {
-    backgroundColor: '#0f172a',
-    color: '#e5e7eb',
-    borderRadius: 10,
-    padding: 12,
+  heading6: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
     marginVertical: 6,
-    borderLeftWidth: 4,
-    borderLeftColor: '#22d3ee', // cyan accent bar
-    width: '100%',
-    flexShrink: 1,
   },
-
-  hr: { backgroundColor: '#334155', height: 1 },
-} as const;
+  paragraph: {
+    marginVertical: 8,
+  },
+  link: {
+    color: '#60a5fa',
+    textDecorationLine: 'underline',
+  },
+  list_item: {
+    flexDirection: 'row',
+    marginVertical: 4,
+  },
+  bullet_list: {
+    marginVertical: 8,
+  },
+  ordered_list: {
+    marginVertical: 8,
+  },
+  bullet_list_icon: {
+    color: '#9ca3af',
+    marginRight: 8,
+  },
+  ordered_list_icon: {
+    color: '#9ca3af',
+    marginRight: 8,
+  },
+  code_inline: {
+    backgroundColor: '#374151',
+    color: '#f3f4f6',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: Platform.select({
+      ios: 'Courier New',
+      android: 'monospace',
+    }),
+  },
+  blockquote: {
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#2563eb',
+    padding: 12,
+    marginVertical: 8,
+    borderRadius: 4,
+  },
+  blockquoteText: {
+    color: '#e5e7eb',
+    fontStyle: 'italic',
+  },
+  code_block: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  fence: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 0,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: '#374151',
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  thead: {
+    backgroundColor: '#1f2937',
+  },
+  th: {
+    padding: 12,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#374151',
+  },
+  thText: {
+    color: '#f9fafb',
+    fontWeight: '600',
+  },
+  tr: {
+    flexDirection: 'row',
+  },
+  td: {
+    flex: 1,
+    padding: 12,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#374151',
+  },
+  tdText: {
+    color: '#e5e7eb',
+  },
+  hr: {
+    backgroundColor: '#374151',
+    height: 1,
+    marginVertical: 16,
+  },
+};

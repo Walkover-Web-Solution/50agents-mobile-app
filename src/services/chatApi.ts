@@ -21,6 +21,7 @@ export interface AgentDetails {
   };
   instructions: string;
   ownerName: string;
+  slugName?: string;  // Added missing slugName property for email generation
 }
 
 export interface ChatThread {
@@ -332,59 +333,36 @@ export class ChatAPI {
   private static async getUserOwnedAgents(): Promise<Set<string>> {
     try {
       const orgId = await this.getCurrentOrgId();
-      if (this.ownedAgentsCacheByOrg[orgId]) {
-        return this.ownedAgentsCacheByOrg[orgId];
-      }
-
-      // Get current user once for id comparisons
-      let currentUserId: string | null = null;
-      try {
-        const user = await this.getCurrentUser();
-        currentUserId = String(user?._id || '').trim();
-      } catch (_) {``
-        currentUserId = null;
-      }
-
+      const user = await this.getCurrentUser();
+      const currentUserId = String(user?._id || '').trim();
+  
+      console.log(`--- Ownership Check for User: ${currentUserId} in Org: ${orgId} ---`);
+  
       const prefix = await this.getProxyPrefix();
       const response = await api.get(`${prefix}/agent/`);
-      const agents = response.data?.data?.agents || response.data?.data || [];
-
+      const agents = response.data?.data?.agents || [];
+  
       const ids = new Set<string>();
       if (Array.isArray(agents)) {
         agents.forEach((agent: any) => {
-          const id = agent?._id || agent?.id || agent?.agentId;
+          const agentId = String(agent?._id || '').trim();
           const createdBy = String(agent?.createdBy || '').trim();
-          const editors: string[] = Array.isArray(agent?.editors)
-            ? agent.editors.map((e: any) => String(e).trim())
-            : [];
-
-          // OWNERSHIP RULE: agent.createdBy === current user _id OR user is in editors
-          if (
-            id &&
-            currentUserId &&
-            (createdBy === currentUserId || editors.includes(currentUserId))
-          ) {
-            ids.add(String(id));
+  
+          // Log for comparison
+          console.log(`Agent: "${agent.name}" | Creator ID: "${createdBy}"`);
+  
+          if (agentId && currentUserId && createdBy === currentUserId) {
+            ids.add(agentId);
+            console.log(`  --> ✅ OWNED`);
           }
         });
       }
-
-      // Augment with /user -> orgAgentMap (user's personal agent per org)
-      try {
-        const user = await this.getCurrentUser();
-        const map = user?.orgAgentMap || {};
-        Object.values(map || {}).forEach((aid: any) => {
-          if (aid) ids.add(String(aid));
-        });
-      } catch (e) {
-        // swallow, main source remains filtered /agent/ list
-      }
-
+  
+      console.log("--- End Ownership Check ---");
       this.ownedAgentsCacheByOrg[orgId] = ids;
       return ids;
     } catch (error: any) {
-      console.warn('⚠️ getUserOwnedAgents warning:', error?.response?.status, error?.message);
-      // Prefer strict safe default: no ownership on error
+      console.warn('⚠️ getUserOwnedAgents error:', error.message);
       return new Set<string>();
     }
   }
@@ -449,6 +427,35 @@ export class ChatAPI {
     }
   }
 
+  static async updateAgent(agentId: string, updates: { name?: string; instructions?: string; slugName?: string }): Promise<boolean> {
+    try {
+      console.log('🔄 [ChatAPI] Updating agent:', { agentId, updates });
+      
+      // Pre-validation: Check if user owns the agent
+      const userOwnsAgent = await this.isAgentOwnedByUser(agentId);
+      if (!userOwnsAgent) {
+        throw new Error('You can only modify agents that you own. Try creating a new assistant or use "My Assistant".');
+      }
+
+      const response = await api.patch(`/proxy/870623/36jowpr17/agent/${agentId}?`, updates);
+
+      console.log('✅ [ChatAPI] Agent update response:', response.data);
+      return response.data.success === true;
+    } catch (error: any) {
+      console.error('❌ [ChatAPI] Agent update error:', error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('You are not authorized to update this agent.');
+      }
+      
+      if (error.message && error.message.includes('You can only modify')) {
+        throw error; // Re-throw our custom ownership error
+      }
+      
+      throw new Error('Failed to update agent. Please try again.');
+    }
+  }
+
   /**
    * Get current user information
    */
@@ -495,20 +502,14 @@ export class ChatAPI {
     }
   }
 
-  /**
-   * Check if agent is owned by current user
-   * Returns true if agent should show model switch (i.e., owned by user)
-   */
   static async isAgentOwnedByUser(agentId: string): Promise<boolean> {
     try {
-      // Delegate to isAgentOwned which uses /agent/ and /user fallbacks
       return await this.isAgentOwned(agentId);
     } catch (error) {
-      console.error('� [ChatAPI] Error checking agent ownership:', error);
+      console.error('🚨 [ChatAPI] Error checking agent ownership:', error);
       return false;
     }
   }
-
   static invalidateOwnershipCache(orgId?: string) {
     if (orgId) {
       delete this.ownedAgentsCacheByOrg[orgId];
