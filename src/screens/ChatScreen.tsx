@@ -24,6 +24,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChatAPI, Message, AgentDetails, ChatThread, ModelOption } from '../services/chatApi';
+import { RecentChatService } from '../services/recentChatService';
 import { chatStyles as styles, markdownTheme } from '../styles/ChatScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,14 +34,15 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import Entypo from 'react-native-vector-icons/Entypo';
 import Octicons from 'react-native-vector-icons/Octicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useVoiceInput } from '../hooks/useVoiceInput';
 type ChatNavProp = NativeStackNavigationProp<RootStackParamList, 'Chat'>;
 type ChatRouteProp = RouteProp<RootStackParamList, 'Chat'>;
 
 const ChatScreen = () => {
   const navigation = useNavigation<ChatNavProp>();
   const route = useRoute<ChatRouteProp>();
-  const { agentId, agentName, agentColor, threadId } = route.params;
-
+  const { agentId, agentName = 'Agent', agentColor, threadId, organizationId } = route.params;
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [agentDetails, setAgentDetails] = useState<AgentDetails | null>(null);
@@ -65,7 +67,13 @@ const ChatScreen = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ name: '', instructions: '', slugName: '' });
   const [updatingAgent, setUpdatingAgent] = useState(false);
-
+  // Recording UI state (for voice input pill)
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const waveformIntervalRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
+  const [waveformHeights, setWaveformHeights] = useState<number[]>(
+    Array.from({ length: 28 }, () => 6)
+  );
   // Settings modal gesture handling
   const settingsPanResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -83,15 +91,27 @@ const ChatScreen = () => {
   });
 
   // Phase 1: Agent Config Loading (UI Bootstrap)
-  useEffect(() => {
+   useEffect(() => {
+    console.log('🔍 [ChatScreen] Component mounted with params:', {
+      agentId,
+      agentName, 
+      organizationId,
+      threadId
+    });
+    
     loadAgentConfig();
     loadUserInitials();
-    if (threadId) {
-      loadThreadHistory(threadId);
-    }
     loadAllThreads();
   }, []);
 
+  // Phase 2: Load thread history after agent details are available
+  useEffect(() => {
+    if (threadId && agentDetails) {
+      console.log('🔄 [ChatScreen] Loading thread history for recent chat:', threadId);
+      loadThreadHistory(threadId);
+    }
+  }, [threadId, agentDetails]);
+  
   const loadAgentConfig = async () => {
     try {
       const details = await ChatAPI.loadAgentConfig(agentId);
@@ -203,11 +223,96 @@ const ChatScreen = () => {
       setShowSettingsButton(false);
     }
   };
+  const { listening, partialText, startListening, stopListening, cancelListening, clearPartialText, testVoiceSetup, debugVoiceStatus } = useVoiceInput({
+onFinalText: (finalText) => {
+  console.log('🎤 📝 Final text received in ChatScreen:', finalText);
+  console.log('🎤 📝 Final text length:', finalText.length, 'characters');
+  
+  // Set the recognized text directly in input field
+  setInputText(finalText);
+  
+  // Optional: Clear partial text after setting final text
+  setTimeout(() => {
+    clearPartialText();
+  }, 100);
+},
+  locale: 'en-US'
+});
+  // Debugging: Log whenever partialText changes
+  useEffect(() => {
+    console.log('🎤 [DEBUG] partialText updated:', partialText);
+  }, [partialText]);
+  
+  // Debugging: Log whenever inputText changes
+  useEffect(() => {
+    console.log('🎤 [DEBUG] inputText updated:', inputText);
+  }, [inputText]);
+  
+ // Live preview partial transcription
+useEffect(() => {
+  if (listening) {
+    // Update inputText with partialText whenever it changes during listening
+    setInputText(partialText);
+  }
+}, [listening, partialText]);
 
+// Animate recording UI (timer + simple waveform)
+useEffect(() => {
+  if (listening) {
+    setRecordingSeconds(0);
+    
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setRecordingSeconds((s: number) => s + 1), 1000);
+
+    if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
+    waveformIntervalRef.current = setInterval(() => {
+      // Agar speech detect ho raha hai to animate karo, warna flat rakho
+      if (partialText && partialText.trim()) {
+        setWaveformHeights(prev => prev.map(() => 4 + Math.floor(Math.random() * 18)));
+      } else {
+        // Silent state - flat bars
+        setWaveformHeights(prev => prev.map(() => 6));
+      }
+    }, 120);
+  } else {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    if (waveformIntervalRef.current) { clearInterval(waveformIntervalRef.current); waveformIntervalRef.current = null; }
+  }
+
+  return () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
+  };
+}, [listening, partialText]); // partialText dependency add karo
+
+// Helpers
+const formatDuration = (sec: number) => {
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = (sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+};
+
+const sendVoiceTranscript = async () => {
+  try {
+    await stopListening(); // finalize
+    const textToSend = (partialText && partialText.trim()) || inputText.trim();
+    if (!textToSend) return;
+    setInputText(textToSend);
+    setTimeout(() => { sendMessage(); }, 10);
+  } catch (e) {
+    console.log('❌ sendVoiceTranscript error:', e);
+  }
+};
   useEffect(() => {
     checkAgentOwnership();
   }, [agentId]);
-
+  // Save recent chat when thread ID changes
+  useEffect(() => {
+  if (currentThreadId && organizationId && agentId && agentName) {
+    // Save this as the recent chat for this org + agent
+    RecentChatService.saveRecentChat(organizationId, agentId, currentThreadId, agentName);
+  }
+}, [currentThreadId, organizationId, agentId, agentName]);
   const switchToThread = async (thread: ChatThread) => {
     try {
       setCurrentThreadId(thread.tid);
@@ -258,9 +363,14 @@ const ChatScreen = () => {
       isUser: true,
       timestamp: new Date(),
     };
-
+    
     const messageText = inputText.trim();
     setInputText('');
+    // Also clear partialText from voice input
+    if (partialText) {
+      console.log('🎤 🧹 Clearing partialText after sending message');
+      // Note: partialText is managed by useVoiceInput hook, we'll clear it via voice hook
+    }
     setSendingMessage(true);
 
     // Add user message to state
@@ -288,6 +398,16 @@ const ChatScreen = () => {
         if (!currentThreadId && response.threadId) {
           console.log('🆕 NEW THREAD CREATED:', response.threadId);
           setCurrentThreadId(response.threadId);
+          if (organizationId && agentId && agentName) {
+            console.log('💾 [ChatScreen] Saving new thread as recent chat:', {
+              org: organizationId,
+              agent: agentId,
+              thread: response.threadId,
+              name: agentName
+            });
+            await RecentChatService.saveRecentChat(organizationId, agentId, response.threadId, agentName);
+            console.log('✅ [ChatScreen] Saved new thread as recent chat:', response.threadId);
+          }
         }
         
         // Add agent response to messages
@@ -446,7 +566,7 @@ const ChatScreen = () => {
       .join(' ');
   };
 
-  const displayName = formatName(agentDetails?.name || agentName);
+  const displayName = formatName(agentDetails?.name || agentName || 'Agent');
 
   const renderThreadItem = ({ item }: { item: ChatThread }) => {
     const translateX = new Animated.Value(0);
@@ -496,11 +616,11 @@ const ChatScreen = () => {
         >
           <View style={styles.threadInfo}>
             <Text style={styles.threadTitle}>
-              {item.threadName 
-                ? item.threadName
-                : item.messages.length > 0 
-                  ? item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '')
-                  : 'New conversation'
+              {item.threadName || 
+              (item.messages?.[0]?.text ? 
+                item.messages[0].text.substring(0, 50) + (item.messages[0].text.length > 50 ? '...' : '') : 
+                'New conversation'
+              )
               }
             </Text>
             <Text style={styles.threadDate}>
@@ -701,7 +821,7 @@ const ChatScreen = () => {
   const copyEmailToClipboard = () => {
     const fullEmail = `${settingsForm.slugName}@50agents.com`;
     Clipboard.setString(fullEmail);
-   
+  
     console.log('✅ Email copied to clipboard:', fullEmail);
   };
 
@@ -757,7 +877,7 @@ const ChatScreen = () => {
               <ActivityIndicator size="small" color="#f9fafb" />
             ) : (
               <Text style={styles.modelButtonText} numberOfLines={1}>
-                {currentModelLabel}
+                {currentModelLabel || 'Model'}
               </Text>
             )}
           </TouchableOpacity>
@@ -838,36 +958,63 @@ const ChatScreen = () => {
           )}
         </View>
 
-        {/* Input Container */}
+        {/* Voice Recording Overlay */}
+        
+        
+        {/* Input Container - Always show same input */}
         <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
           <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Type your message..."
-              placeholderTextColor="#6b7280"
-              multiline
-              maxLength={1000}
-            />
-            <TouchableOpacity 
-              style={[
-                styles.sendButton,
-                (inputText.trim() && !sendingMessage) ? styles.sendButtonActive : styles.sendButtonInactive
-              ]}
-              onPress={sendMessage}
-              disabled={!inputText.trim() || sendingMessage}
+               <TextInput
+                    style={styles.textInput}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder={listening ? "🎤 Now speak..." : "Type your message..."}
+                    placeholderTextColor={listening ? "#4CAF50" : "#6b7280"}
+                    multiline
+                    maxLength={1000}
+                   />
+       <TouchableOpacity
+                    style={[styles.voiceButton, listening && { backgroundColor: '#4CAF50' }]}
+                    onPress={listening ? () => {
+                      console.log('🎤 🛑 Stopping voice recognition...');
+                      stopListening();
+                    } : () => {
+                      console.log('🎤 🔴 Voice button pressed - starting recognition...');
+                      // Clear input text when starting voice recording
+                      setInputText('');
+                      startListening();
+                    }}
+              onLongPress={() => {
+                console.log('🎤 🧪 Running voice debug...');
+                debugVoiceStatus();
+              }}
+              accessibilityLabel="Voice input"
             >
-              {sendingMessage ? (
-                <ActivityIndicator size="small" color="#6b7280" />
-              ) : (
-                <AntDesign name="arrowright" size={18} color="#212121" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+              <MaterialIcons
+                name="keyboard-voice" // Always show same icon
+                size={18}
+                color="#ffffff"
+              />
+</TouchableOpacity>
+      <TouchableOpacity 
+        style={[
+          styles.sendButton,
+          (inputText.trim() && !sendingMessage) ? styles.sendButtonActive : styles.sendButtonInactive
+        ]}
+        onPress={sendMessage}
+        disabled={!inputText.trim() || sendingMessage}
+      >
+        {sendingMessage ? (
+          <ActivityIndicator size="small" color="#6b7280" />
+        ) : (
+          <AntDesign name="arrowup" size={18} color="#212121" />
+        )}
+      </TouchableOpacity>
+    </View>
+  )}
+</View>
       </KeyboardAvoidingView>
-
+     
       <Modal
         visible={showThreadsList}
         animationType="slide"

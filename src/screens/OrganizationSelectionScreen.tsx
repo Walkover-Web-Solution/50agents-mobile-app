@@ -107,30 +107,6 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handleLogout = async (): Promise<void> => {
-    Alert.alert(
-      'Confirm Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout();
-            } finally {
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }]
-              });
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
   
   if (loading) {
     return (
@@ -202,15 +178,7 @@ const OrganizationSelectionScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
       
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Feather name="log-out" size={18} color="#ff6b6b" />
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+     
     </View>
   );
 };

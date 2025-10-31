@@ -27,6 +27,7 @@ import { DashboardService, Agent } from '../services/dashboardService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { dashboardStyles as styles } from '../styles/DashboardScreen.styles';
 import { getAvatarColor, getAvatarInitials } from '../utils/avatarUtils';
+import { RecentChatService } from '../services/recentChatService';
 import { OrganizationService } from '../services/organizationService';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Entypo from 'react-native-vector-icons/Entypo';
@@ -137,16 +138,73 @@ const DashboardScreen = () => {
   useEffect(() => {
     fetchDashboardAgents();
   }, [companyName]); // Refetch when organization changes
+  useEffect(() => {
+    const autoOpenRecentChat = async () => {
+      if (!organizationId || agents.length === 0) return;
+      
+      try {
+        const mostRecentChat = await RecentChatService.getMostRecentChatForOrg(organizationId);
+        
+        if (mostRecentChat) {
+          const agent = agents.find(a => a._id === mostRecentChat.agentId);
+          
+          if (agent) {
+            console.log('🚀 [Dashboard] Auto-opening most recent chat for org:', organizationId);
+            navigation.navigate('Chat', {
+              agentId: agent._id,
+              agentName: agent.name,
+              agentColor: getAvatarColor(agent.name),
+              organizationId: organizationId,
+              threadId: mostRecentChat.lastThreadId,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ [Dashboard] Error auto-opening recent chat:', error);
+      }
+    };
 
-  const handleAgentPress = (agent: Agent) => {
-    console.log(' [Dashboard] Open chat for agent:', { name: agent.name, _id: agent._id });
-    navigation.navigate('Chat', {
-      agentId: agent._id,
-      agentName: agent.name,
-      agentColor: getAvatarColor(agent.name), // Pass the same color
-    });
+    autoOpenRecentChat();
+  }, [organizationId, agents, navigation]);
+  const handleAgentPress = async (agent: Agent) => {
+    console.log('🔍 [Dashboard] Open chat for agent:', { name: agent.name, _id: agent._id });
+    
+    try {
+      // Check if recent chat exists for this org + agent
+      const recentChat = await RecentChatService.getRecentChat(organizationId, agent._id);
+      
+      if (recentChat && recentChat.lastThreadId) {
+        // Navigate with recent thread ID
+        console.log('✅ [Dashboard] Found recent chat, loading thread:', recentChat.lastThreadId);
+        navigation.navigate('Chat', {
+          agentId: agent._id,
+          agentName: agent.name,
+          agentColor: getAvatarColor(agent.name),
+          organizationId: organizationId,
+          threadId: recentChat.lastThreadId, // Load recent thread
+        });
+      } else {
+        // No recent chat, start fresh
+        console.log('🆕 [Dashboard] No recent chat found, starting new conversation');
+        navigation.navigate('Chat', {
+          agentId: agent._id,
+          agentName: agent.name,
+          agentColor: getAvatarColor(agent.name),
+          organizationId: organizationId,
+          // No threadId = new conversation
+        });
+      }
+    } catch (error) {
+      console.error('❌ [Dashboard] Error checking recent chat:', error);
+      // Fallback to normal navigation
+      navigation.navigate('Chat', {
+        agentId: agent._id,
+        agentName: agent.name,
+        agentColor: getAvatarColor(agent.name),
+        organizationId: organizationId,
+      });
+    }
   };
-
   const filteredAgents = getFilteredAgents();
 
   const renderAgent = ({ item }: { item: Agent }) => (
@@ -286,6 +344,7 @@ const DashboardScreen = () => {
             agentId: response.data._id,
             agentName: response.data.name || name,
             agentColor: getAvatarColor(response.data.name || name),
+            organizationId: organizationId,
           });
         }
         

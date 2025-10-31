@@ -204,6 +204,14 @@ export const chatStyles = StyleSheet.create({
   sendButtonInactive: {
     backgroundColor: 'transparent',
   },
+voiceButton: {
+  padding: 8,
+  borderRadius: 20,
+  backgroundColor: '#6b7280',
+  marginLeft: 8,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   sendIcon: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -744,6 +752,72 @@ export const chatStyles = StyleSheet.create({
     marginTop: 4,
     fontStyle: 'italic',
   },
+  recordingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 100,
+    backgroundColor: 'rgba(33, 33, 33, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  recordingCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  recordingText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  recordingHint: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '300',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  recordingInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    width: '90%',
+    minHeight: 48,
+  },
+  recordingTextInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 16,
+    lineHeight: 22,
+    maxHeight: 120,
+    paddingVertical: 0,
+  },
+  sendRecordingButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  transcriptText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+  
 });
 
 // Markdown theme for react-native-markdown-display

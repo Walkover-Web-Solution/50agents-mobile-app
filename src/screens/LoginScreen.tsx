@@ -14,7 +14,7 @@ import { CONFIG } from '../config';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { saveProxyAuthToken, saveUserEmail, saveToken } from '../utils/auth';
 import { ShowProxyAuth } from '../react-native-proxy/src';
-
+import organizationService from '../services/organizationService';
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen = () => {
@@ -23,15 +23,19 @@ const LoginScreen = () => {
  
   
   const handleLoginSuccess = async (data: any) => {
-    // Log raw response for debugging/verification
-    console.log('🔍 LOGIN SCREEN TEST - Apple Sign-In Success');
+   
     try {
-      console.log('📍 Apple Login Success - Raw Response:', JSON.stringify(data, null, 2));
-    } catch {
-      console.log('📍 Apple Login Success - Raw Response (non-JSON):', data);
-    }
-
-    try {
+      // 🔍 DETAILED DEBUGGING: Log complete response structure
+      console.log('📱 ===== LOGIN SUCCESS RESPONSE DEBUG =====');
+      console.log('📱 Full response data:', JSON.stringify(data, null, 2));
+      console.log('📱 Response type:', typeof data);
+      console.log('📱 Response keys:', data ? Object.keys(data) : 'null/undefined');
+      
+      if (data?.data) {
+        console.log('📱 data.data keys:', Object.keys(data.data));
+        console.log('📱 data.data content:', JSON.stringify(data.data, null, 2));
+      }
+      
       // Multiple token extraction patterns for Apple Sign-In
       const token: string | undefined = 
         data?.data?.proxy_auth_token || 
@@ -47,16 +51,29 @@ const LoginScreen = () => {
         data?.user?.email ||
         data?.data?.user?.email;
 
-      console.log(' Extracted token present:', !!token);
-      console.log(' Extracted email:', email || 'not provided');
+      console.log('📱 Extracted token present:', !!token);
+      console.log('📱 Extracted token length:', token ? token.length : 'no token');
+      console.log('📱 Extracted token first 50 chars:', token ? token.substring(0, 50) + '...' : 'no token');
+      console.log('📱 Extracted email:', email || 'not provided');
+
+      // Check for any API errors first
+      if (data?.data?.error) {
+        console.log('📱 ❌ API ERROR:', data.data.error);
+        Alert.alert('Login Failed', `Error: ${data.data.error}`);
+        return;
+      }
 
       if (!token) {
         // Help debug: show top-level keys when token missing
         const keys = data && typeof data === 'object' ? Object.keys(data) : [];
         const nestedKeys = data?.data && typeof data.data === 'object' ? Object.keys(data.data) : [];
-        console.log(' No token in response. Top-level keys:', keys);
-        console.log(' data.data keys:', nestedKeys);
-        Alert.alert('Login Failed', 'No token received. Please try again.');
+        console.log('📱 ❌ NO TOKEN FOUND IN RESPONSE');
+        console.log('📱 Top-level keys:', keys);
+        console.log('📱 data.data keys:', nestedKeys);
+        
+        // Check if there's any error message to show
+        const errorMsg = data?.data?.error || data?.error || 'No token received. Please try again.';
+        Alert.alert('Login Failed', errorMsg);
         return;
       }
 
@@ -70,13 +87,30 @@ const LoginScreen = () => {
         AsyncStorage.setItem('referenceId', CONFIG.APP.DEFAULTS.REFERENCE_ID),
       ]);
 
-      console.log(' proxy_auth_token saved. Navigating to OrganizationSelection...');
+     // Fetch organizations and auto-navigate
+// Fetch organizations and auto-navigate
+const organizations = await organizationService.getOrganizations();
 
-      // Navigate forward exactly as before
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'OrganizationSelection' }],
-      });
+if (organizations && organizations.length > 0) {
+  const defaultOrg = organizations[0];
+
+  navigation.reset({
+    index: 0,
+    routes: [{
+      name: 'Dashboard',
+      params: {
+        companyName: defaultOrg.name || defaultOrg.company_uname ,
+        companyId: String(defaultOrg.id),
+        organizationId: String(defaultOrg.id),
+      }
+    }]
+  });
+} else {
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'OrganizationSelection' }],
+  });
+}
     } catch (err) {
       console.error(' Proxy login success handling error:', err);
       Alert.alert('Login Failed', 'Could not save session. Please try again.');
