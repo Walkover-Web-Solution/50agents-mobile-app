@@ -349,8 +349,7 @@ export class ChatAPI {
           const createdBy = String(agent?.createdBy || '').trim();
   
           // Log for comparison
-          console.log(`Agent: "${agent.name}" | Creator ID: "${createdBy}"`);
-  
+         
           if (agentId && currentUserId && createdBy === currentUserId) {
             ids.add(agentId);
             console.log(`  --> ✅ OWNED`);

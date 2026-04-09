@@ -67,13 +67,6 @@ const ChatScreen = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ name: '', instructions: '', slugName: '' });
   const [updatingAgent, setUpdatingAgent] = useState(false);
-  // Recording UI state (for voice input pill)
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const waveformIntervalRef = useRef<any>(null);
-  const timerRef = useRef<any>(null);
-  const [waveformHeights, setWaveformHeights] = useState<number[]>(
-    Array.from({ length: 28 }, () => 6)
-  );
   // Settings modal gesture handling
   const settingsPanResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -224,85 +217,66 @@ const ChatScreen = () => {
     }
   };
   const { listening, partialText, startListening, stopListening, cancelListening, clearPartialText, testVoiceSetup, debugVoiceStatus } = useVoiceInput({
-onFinalText: (finalText) => {
-  console.log('🎤 📝 Final text received in ChatScreen:', finalText);
-  console.log('🎤 📝 Final text length:', finalText.length, 'characters');
-  
-  // Set the recognized text directly in input field
-  setInputText(finalText);
-  
-  // Optional: Clear partial text after setting final text
-  setTimeout(() => {
-    clearPartialText();
-  }, 100);
-},
-  locale: 'en-US'
-});
-  // Debugging: Log whenever partialText changes
-  useEffect(() => {
-    console.log('🎤 [DEBUG] partialText updated:', partialText);
-  }, [partialText]);
-  
-  // Debugging: Log whenever inputText changes
-  useEffect(() => {
-    console.log('🎤 [DEBUG] inputText updated:', inputText);
-  }, [inputText]);
-  
- // Live preview partial transcription
-useEffect(() => {
-  if (listening) {
-    // Update inputText with partialText whenever it changes during listening
-    setInputText(partialText);
-  }
-}, [listening, partialText]);
+    onFinalText: (finalText) => {
+      console.log('🎤 📝 Final text received in ChatScreen:', finalText);
+      setInputText(finalText);
+    },
+    locale: 'en-US'
+  });
 
-// Animate recording UI (timer + simple waveform)
-useEffect(() => {
-  if (listening) {
-    setRecordingSeconds(0);
-    
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setRecordingSeconds((s: number) => s + 1), 1000);
+  // Use ref to track if we should update input from voice
+  const isVoiceActiveRef = useRef(false);
+  const voiceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
-    waveformIntervalRef.current = setInterval(() => {
-      // Agar speech detect ho raha hai to animate karo, warna flat rakho
-      if (partialText && partialText.trim()) {
-        setWaveformHeights(prev => prev.map(() => 4 + Math.floor(Math.random() * 18)));
-      } else {
-        // Silent state - flat bars
-        setWaveformHeights(prev => prev.map(() => 6));
+  // Update input text smoothly during voice recognition
+  useEffect(() => {
+    if (listening && partialText) {
+      isVoiceActiveRef.current = true;
+      setInputText(partialText);
+    } else if (!listening && isVoiceActiveRef.current) {
+      isVoiceActiveRef.current = false;
+    }
+  }, [listening, partialText]);
+
+  // 10 second timeout for voice recognition
+  useEffect(() => {
+    if (listening) {
+      // Clear any existing timeout
+      if (voiceTimeoutRef.current) {
+        clearTimeout(voiceTimeoutRef.current);
       }
-    }, 120);
-  } else {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    if (waveformIntervalRef.current) { clearInterval(waveformIntervalRef.current); waveformIntervalRef.current = null; }
-  }
+      
+      // Set 10 second timeout
+      voiceTimeoutRef.current = setTimeout(() => {
+        console.log('🎤 ⏰ Voice timeout - stopping after 10 seconds of inactivity');
+        stopListening();
+      }, 5000);
+    } else {
+      // Clear timeout when listening stops
+      if (voiceTimeoutRef.current) {
+        clearTimeout(voiceTimeoutRef.current);
+        voiceTimeoutRef.current = null;
+      }
+    }
 
-  return () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
-  };
-}, [listening, partialText]); // partialText dependency add karo
+    return () => {
+      if (voiceTimeoutRef.current) {
+        clearTimeout(voiceTimeoutRef.current);
+      }
+    };
+  }, [listening]);
 
-// Helpers
-const formatDuration = (sec: number) => {
-  const m = Math.floor(sec / 60).toString().padStart(2, '0');
-  const s = (sec % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-};
-
-const sendVoiceTranscript = async () => {
-  try {
-    await stopListening(); // finalize
-    const textToSend = (partialText && partialText.trim()) || inputText.trim();
-    if (!textToSend) return;
-    setInputText(textToSend);
-    setTimeout(() => { sendMessage(); }, 10);
-  } catch (e) {
-    console.log('❌ sendVoiceTranscript error:', e);
-  }
-};
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (listening) {
+        cancelListening();
+      }
+      if (voiceTimeoutRef.current) {
+        clearTimeout(voiceTimeoutRef.current);
+      }
+    };
+  }, [listening]);
   useEffect(() => {
     checkAgentOwnership();
   }, [agentId]);
@@ -357,6 +331,11 @@ const sendVoiceTranscript = async () => {
   const sendMessage = async () => {
     if (inputText.trim() === '' || sendingMessage) return;
 
+    // Stop voice recognition if it's still active
+    if (listening) {
+      await stopListening();
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText.trim(),
@@ -366,11 +345,11 @@ const sendVoiceTranscript = async () => {
     
     const messageText = inputText.trim();
     setInputText('');
-    // Also clear partialText from voice input
-    if (partialText) {
-      console.log('🎤 🧹 Clearing partialText after sending message');
-      // Note: partialText is managed by useVoiceInput hook, we'll clear it via voice hook
-    }
+    
+    // Clear voice input state
+    clearPartialText();
+    isVoiceActiveRef.current = false;
+    
     setSendingMessage(true);
 
     // Add user message to state
@@ -958,7 +937,7 @@ const sendVoiceTranscript = async () => {
           )}
         </View>
 
-        {/* Voice Recording Overlay */}
+        
         
         
         {/* Input Container - Always show same input */}
@@ -969,12 +948,12 @@ const sendVoiceTranscript = async () => {
                     value={inputText}
                     onChangeText={setInputText}
                     placeholder={listening ? "🎤 Now speak..." : "Type your message..."}
-                    placeholderTextColor={listening ? "#4CAF50" : "#6b7280"}
+                    placeholderTextColor={listening ? "#2563eb" : "#6b7280"}
                     multiline
                     maxLength={1000}
                    />
        <TouchableOpacity
-                    style={[styles.voiceButton, listening && { backgroundColor: '#4CAF50' }]}
+                    style={[styles.voiceButton, listening && { backgroundColor: '#2563eb' }]}
                     onPress={listening ? () => {
                       console.log('🎤 🛑 Stopping voice recognition...');
                       stopListening();
@@ -999,10 +978,10 @@ const sendVoiceTranscript = async () => {
       <TouchableOpacity 
         style={[
           styles.sendButton,
-          (inputText.trim() && !sendingMessage) ? styles.sendButtonActive : styles.sendButtonInactive
+          (inputText.trim() && !sendingMessage && !listening) ? styles.sendButtonActive : styles.sendButtonInactive
         ]}
         onPress={sendMessage}
-        disabled={!inputText.trim() || sendingMessage}
+        disabled={!inputText.trim() || sendingMessage || listening}
       >
         {sendingMessage ? (
           <ActivityIndicator size="small" color="#6b7280" />
@@ -1011,7 +990,7 @@ const sendVoiceTranscript = async () => {
         )}
       </TouchableOpacity>
     </View>
-  )}
+  
 </View>
       </KeyboardAvoidingView>
      

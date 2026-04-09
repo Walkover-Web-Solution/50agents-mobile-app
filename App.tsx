@@ -8,6 +8,17 @@ import LoginScreen from './src/screens/LoginScreen';
 import OrganizationSelectionScreen from './src/screens/OrganizationSelectionScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import WorkFlowScreen from './src/screens/WorkManagement/WorkFlowScreen';
+import WorkItemsScreen from './src/screens/WorkManagement/WorkItemsScreen';
+import WorkItemDetailScreen from './src/screens/WorkManagement/WorkItemDetailScreen';
+import ManageCategoriesScreen from './src/screens/WorkManagement/ManageCategoriesScreen';
+import ManageViewsScreen from './src/screens/WorkManagement/ManageViewsScreen';
+import ManageTagsScreen from './src/screens/WorkManagement/ManageTagsScreen';
+import CategoryItemsScreen from './src/screens/WorkManagement/CategoryItemsScreen';
+import InProgressTasksScreen from './src/screens/WorkManagement/InProgressTasksScreen';
+import AutomationsScreen from './src/screens/WorkManagement/AutomationsScreen';
+import APIKeysScreen from './src/screens/WorkManagement/APIKeysScreen';
+import WebhooksScreen from './src/screens/WorkManagement/WebhooksScreen';
 import { RootStackParamList } from './src/types/navigation';
 import { getToken } from './src/utils/auth';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -104,6 +115,106 @@ function App() {
         <Stack.Screen 
           name="Chat" 
           component={ChatScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="WorkFlow" 
+          component={WorkFlowScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'card',
+            animation: 'slide_from_left',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="WorkItems" 
+          component={WorkItemsScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="WorkItemDetail" 
+          component={WorkItemDetailScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ManageCategories" 
+          component={ManageCategoriesScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ManageViews" 
+          component={ManageViewsScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="ManageTags" 
+          component={ManageTagsScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="CategoryItems" 
+          component={CategoryItemsScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="FilteredWorkItems" 
+          component={InProgressTasksScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="Automations" 
+          component={AutomationsScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="APIKeys" 
+          component={APIKeysScreen}
+          options={{
+            gestureEnabled: true,
+            presentation: 'modal',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="Webhooks" 
+          component={WebhooksScreen}
           options={{
             gestureEnabled: true,
             presentation: 'modal',

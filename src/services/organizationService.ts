@@ -194,48 +194,125 @@ export class OrganizationService {
       
       console.log(' [Service] Using API credentials - Company:', companyId, 'User:', userId);
       
-      const response = await api.post(`/proxy/${companyId}/${userId}/user/switch-org`, {
-        orgId: orgId
-      });
-
-      console.log(' [Service] Switch-org API response status:', response.status);
-
-      if (response.status === 200) {
-        const data: SwitchOrgApiResponse = response.data;
+      // Get proxy auth token
+      const token = await getProxyAuthToken();
+      console.log(' [Service] Proxy auth token available:', !!token);
+      console.log(' [Service] Token length:', token ? token.length : 0);
       
+      const endpoint = `/proxy/${companyId}/${userId}/user/switch-org`;
+      const fullUrl = `https://routes.msg91.com/api${endpoint}`;
+      console.log(' [Service] Full endpoint:', fullUrl);
+      console.log(' [Service] Request payload:', { orgId });
+      
+      // Try axios first
+      try {
+        const response = await api.post(endpoint, {
+          orgId: orgId
+        });
+
+        console.log(' [Service] Switch-org API response status:', response.status);
+
+        if (response.status === 200) {
+          const data: SwitchOrgApiResponse = response.data;
         
-        // Save important data from response
-        if (data?.data?.orgAgentMap) {
-          console.log(' [Service] Saving orgAgentMap:', data.data.orgAgentMap);
-          await AsyncStorage.setItem('orgAgentMap', JSON.stringify(data.data.orgAgentMap));
           
-          // Get agent ID for current organization
-          const agentId = data.data.orgAgentMap[orgId];
-          if (agentId) {
-            console.log(' [Service] Agent ID for org', orgId, ':', agentId);
-            await AsyncStorage.setItem('currentAgentId', agentId);
+          // Save important data from response
+          if (data?.data?.orgAgentMap) {
+            console.log(' [Service] Saving orgAgentMap:', data.data.orgAgentMap);
+            await AsyncStorage.setItem('orgAgentMap', JSON.stringify(data.data.orgAgentMap));
+            
+            // Get agent ID for current organization
+            const agentId = data.data.orgAgentMap[orgId];
+            if (agentId) {
+              console.log(' [Service] Agent ID for org', orgId, ':', agentId);
+              await AsyncStorage.setItem('currentAgentId', agentId);
+            }
           }
+          
+          // Persist current organization for downstream services (e.g., ownership checks)
+          await AsyncStorage.setItem('currentOrgId', orgId);
+          // Invalidate owned-agents cache for this org to reflect fresh permissions
+          ChatAPI.invalidateOwnershipCache(orgId);
+          
+          // Save user profile data
+          if (data?.data) {
+            console.log(' [Service] Saving user profile data');
+            await AsyncStorage.setItem('userProfile', JSON.stringify(data.data));
+          }
+          
+        } else {
+          const errorText = response.data || response.statusText || 'Unknown error';
+          console.log(' [Service] Switch-org API error:', errorText);
+          throw new Error(`Switch-org API failed: ${response.status}`);
         }
-        
-        // Persist current organization for downstream services (e.g., ownership checks)
-        await AsyncStorage.setItem('currentOrgId', orgId);
-        // Invalidate owned-agents cache for this org to reflect fresh permissions
-        ChatAPI.invalidateOwnershipCache(orgId);
-        
-        // Save user profile data
-        if (data?.data) {
-          console.log(' [Service] Saving user profile data');
-          await AsyncStorage.setItem('userProfile', JSON.stringify(data.data));
+      } catch (axiosError: any) {
+        // If axios fails with network error, try direct fetch as fallback
+        if (!axiosError?.response) {
+          console.warn(' [Service] Axios failed with network error, trying direct fetch...');
+          
+          const fetchResponse = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'proxy_auth_token': token || '',
+            },
+            body: JSON.stringify({ orgId }),
+          });
+
+          if (!fetchResponse.ok) {
+            throw new Error(`Fetch failed with status ${fetchResponse.status}`);
+          }
+
+          const data: SwitchOrgApiResponse = await fetchResponse.json();
+          console.log(' [Service] Direct fetch succeeded, response:', data);
+
+          // Save important data from response
+          if (data?.data?.orgAgentMap) {
+            console.log(' [Service] Saving orgAgentMap:', data.data.orgAgentMap);
+            await AsyncStorage.setItem('orgAgentMap', JSON.stringify(data.data.orgAgentMap));
+            
+            const agentId = data.data.orgAgentMap[orgId];
+            if (agentId) {
+              console.log(' [Service] Agent ID for org', orgId, ':', agentId);
+              await AsyncStorage.setItem('currentAgentId', agentId);
+            }
+          }
+          
+          await AsyncStorage.setItem('currentOrgId', orgId);
+          ChatAPI.invalidateOwnershipCache(orgId);
+          
+          if (data?.data) {
+            console.log(' [Service] Saving user profile data');
+            await AsyncStorage.setItem('userProfile', JSON.stringify(data.data));
+          }
+        } else {
+          // If it's an HTTP error (not network), re-throw
+          throw axiosError;
         }
-        
-      } else {
-        const errorText = response.data || response.statusText || 'Unknown error';
-        console.log(' [Service] Switch-org API error:', errorText);
-        throw new Error(`Switch-org API failed: ${response.status}`);
       }
       
     } catch (error: any) {
-      console.error(' [Service] Switch-org API error:', error);
+      console.error(' [Service] Switch-org API error - Full error object:', {
+        message: error?.message,
+        code: error?.code,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        isNetworkError: !error?.response,
+        errorType: error?.constructor?.name
+      });
+      
+      // Provide more helpful error messages
+      if (!error?.response) {
+        console.error(' [Service] ❌ NETWORK ERROR - Cannot reach API server');
+        console.error(' [Service] Troubleshooting steps:');
+        console.error('   1. Check if Android emulator has internet access');
+        console.error('   2. Try: adb shell ping 8.8.8.8');
+        console.error('   3. Restart emulator or check WiFi connection');
+        console.error('   4. Verify proxy_auth_token is not empty');
+        throw new Error('Network error: Cannot reach the server. Check your internet connection.');
+      }
+      
       throw error;
     }
   }

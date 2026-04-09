@@ -24,6 +24,66 @@ export type RootStackParamList = {
     organizationId: string;
   };
   
+  // WorkFlow screen
+  WorkFlow: {
+    organizationName?: string;
+  };
+  
+  // Work Items screen
+  WorkItems: {
+    organizationName?: string;
+  };
+
+  // Work Item Detail screen
+  WorkItemDetail: {
+    workItemId: number;
+  };
+
+  // Manage Categories screen
+  ManageCategories: {
+    organizationName?: string;
+    openAddModal?: boolean;
+  };
+
+  // Manage Views screen
+  ManageViews: {
+    organizationName?: string;
+    openAddModal?: boolean;
+  };
+  ManageTags: {
+    organizationName?: string;
+  };
+
+  // Category Items screen
+  CategoryItems: {
+    categoryId: number;
+    categoryName: string;
+    organizationName?: string;
+  };
+
+  // Filtered Work Items screen
+  FilteredWorkItems: {
+    filterType: 'status' | 'assignee';
+    filterValue: string;
+    filterLabel: string;
+    organizationName?: string;
+  };
+
+  // Automations screen
+  Automations: {
+    organizationName?: string;
+  };
+
+  // API Keys screen
+  APIKeys: {
+    organizationName?: string;
+  };
+
+  // Webhooks screen
+  Webhooks: {
+    organizationName?: string;
+  };
+  
   // Add other screens here as needed
 };
 

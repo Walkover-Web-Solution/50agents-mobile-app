@@ -10,6 +10,9 @@ import {
   StatusBar,
   Modal,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   useNavigation,
@@ -466,30 +469,63 @@ const DashboardScreen = () => {
         </View>
       </Modal>
        
-       <View style={styles.searchContainer}>
-         <TextInput
-           style={styles.searchInput}
-           placeholder="Search agents..."
-           value={searchQuery}
-           onChangeText={setSearchQuery}
-           placeholderTextColor="#666"
-         />
-       </View>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search agents..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#666"
+          />
+        </View>
 
-      <FlatList
-        data={filteredAgents}
-        keyExtractor={(item, index) => item?._id ? `agent_${item._id}` : `fallback_${index}`}
-        renderItem={renderAgent}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          !loading ? (
+        <TouchableOpacity 
+          style={styles.workManagementButton}
+          onPress={() => {
+            console.log('🎯 Opening WorkItems screen directly from Dashboard');
+            navigation.navigate('WorkItems', { organizationName: companyName });
+          }}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="briefcase" size={24} color="#fff" />
+          <Text style={styles.workManagementText}>Work Management Agent</Text>
+        </TouchableOpacity>
+
+        {myAssistant && (
+          <View style={styles.myAssistantItem}>
+            <View style={[styles.agentAvatar, { backgroundColor: getAvatarColor(myAssistant.name) }]}>
+              <Text style={styles.agentInitial}>
+                {getAvatarInitials(myAssistant.name)}
+              </Text>
+            </View>
+            <Text style={styles.agentName}>{myAssistant.name}</Text>
+          </View>
+        )}
+
+        <View style={styles.listContent}>
+          {filteredAgents.length > 0 ? (
+            filteredAgents.map((item, index) => (
+              <TouchableOpacity
+                key={item?._id ? `agent_${item._id}` : `fallback_${index}`}
+                style={styles.agentItem}
+                onPress={() => handleAgentPress(item)}
+              >
+                <View style={[styles.agentAvatar, { backgroundColor: getAvatarColor(item.name) }]}>
+                  <Text style={styles.agentInitial}>
+                    {getAvatarInitials(item.name)}
+                  </Text>
+                </View>
+                <Text style={styles.agentName}>{item.name}</Text>
+              </TouchableOpacity>
+            ))
+          ) : !loading ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No agents found</Text>
             </View>
-          ) : null
-        }
-      />
+          ) : null}
+        </View>
+      </ScrollView>
       <Modal
         visible={createOrgModalVisible}
         transparent
@@ -500,7 +536,11 @@ const DashboardScreen = () => {
           setCreateOrgError(null);
         }}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Create Organization</Text>
             <TextInput
@@ -542,7 +582,7 @@ const DashboardScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       {/* Members Modal */}
       <Modal
@@ -557,7 +597,11 @@ const DashboardScreen = () => {
           setInviteResults([]);
         }}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Members</Text>
             <TextInput
@@ -620,7 +664,7 @@ const DashboardScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       {/* Create Assistant Modal */}
       <Modal
@@ -634,7 +678,11 @@ const DashboardScreen = () => {
           setCreateAssistantError(null);
         }}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Create Assistant</Text>
             <TextInput
@@ -691,7 +739,7 @@ const DashboardScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       
       {/* Floating Action Button */}
